@@ -1,0 +1,23 @@
+{% extends 'ekskursijos/base.html' %}
+{% block title %}{{ veiksmas }} ekskursiją{% endblock %}
+{% block content %}
+<h1>{{ veiksmas }} ekskursiją</h1>
+<div class="forma-wrap">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% for laukas in forma %}
+        <div class="laukas">
+            <label>{{ laukas.label }}</label>
+            {{ laukas }}
+            {% if laukas.errors %}
+            <p style="color:red; font-size:.85rem;">{{ laukas.errors }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+        <div class="veiksmai" style="margin-top:1rem;">
+            <button type="submit" class="btn btn-green">💾 Išsaugoti</button>
+            <a href="/" class="btn btn-gray">Atšaukti</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

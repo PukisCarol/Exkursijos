@@ -1,0 +1,20 @@
+{% extends 'ekskursijos/base.html' %}
+{% block title %}{{ ekskursija.pavadinimas }}{% endblock %}
+{% block content %}
+<h1>{{ ekskursija.pavadinimas }}</h1>
+{% if ekskursija.nuotrauka %}
+<img src="{{ ekskursija.nuotrauka.url }}"
+     style="max-width:600px; border-radius:10px; margin-bottom:1.5rem; display:block;">
+{% endif %}
+<div style="background:white; padding:1.5rem; border-radius:10px; max-width:600px;">
+    <p style="margin:.5rem 0;">📍 <strong>Vieta:</strong> {{ ekskursija.vieta }}</p>
+    <p style="margin:.5rem 0;">⏱ <strong>Trukmė:</strong> {{ ekskursija.trukme_val }} val.</p>
+    <p style="margin:.5rem 0;">💶 <strong>Kaina:</strong> {{ ekskursija.kaina }} €</p>
+    <p style="margin:1rem 0;">{{ ekskursija.aprasymas }}</p>
+</div>
+<div class="veiksmai" style="margin-top:1.5rem;">
+    <a href="/{{ ekskursija.pk }}/redaguoti/" class="btn btn-blue">✏️ Redaguoti</a>
+    <a href="/{{ ekskursija.pk }}/trinti/"    class="btn btn-red">🗑️ Trinti</a>
+    <a href="/"                               class="btn btn-gray">← Grįžti</a>
+</div>
+{% endblock %}

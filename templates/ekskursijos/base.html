@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Ekskursijos{% endblock %}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #f0f4f0; color: #333; }
+        nav { background: #2c7a4b; padding: 1rem 2rem; display: flex; gap: 2rem; align-items: center; }
+        nav a { color: white; text-decoration: none; font-size: 1.1rem; }
+        nav a:hover { text-decoration: underline; }
+        .container { max-width: 1100px; margin: 2rem auto; padding: 0 1rem; }
+        h1 { color: #2c7a4b; margin-bottom: 1.5rem; }
+        .btn { padding: .5rem 1rem; border-radius: 6px; text-decoration: none;
+               border: none; cursor: pointer; font-size: .95rem; display: inline-block; }
+        .btn-green { background: #2c7a4b; color: white; }
+        .btn-blue  { background: #1a6fa8; color: white; }
+        .btn-red   { background: #c0392b; color: white; }
+        .btn-gray  { background: #ccc; color: #333; }
+        .btn:hover { opacity: .85; }
+        table { width: 100%; border-collapse: collapse; background: white;
+                border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+        th, td { padding: .85rem 1rem; text-align: left; border-bottom: 1px solid #e0e0e0; }
+        th { background: #2c7a4b; color: white; }
+        tr:hover { background: #f9fff9; }
+        .forma-wrap { background: white; padding: 2rem; border-radius: 10px;
+                      max-width: 600px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+        .laukas { margin-bottom: 1rem; }
+        .laukas label { display: block; font-weight: bold; margin-bottom: .3rem; }
+        .laukas input, .laukas textarea, .laukas select {
+            width: 100%; padding: .5rem; border: 1px solid #ccc;
+            border-radius: 6px; font-size: 1rem; }
+        .veiksmai { display: flex; gap: .5rem; }
+    </style>
+</head>
+<body>
+<nav>
+    <a href="/">🗺️ Ekskursijos</a>
+    <a href="/prideti/">➕ Pridėti naują</a>
+</nav>
+<div class="container">
+    {% block content %}{% endblock %}
+</div>
+</body>
+</html>

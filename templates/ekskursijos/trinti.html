@@ -1,0 +1,17 @@
+{% extends 'ekskursijos/base.html' %}
+{% block title %}Trinti ekskursiją{% endblock %}
+{% block content %}
+<h1>Trinti ekskursiją</h1>
+<div class="forma-wrap">
+    <p style="margin-bottom:1.5rem;">
+        Ar tikrai nori ištrinti <strong>{{ ekskursija.pavadinimas }}</strong>? Šio veiksmo negalima atšaukti!
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="veiksmai">
+            <button type="submit" class="btn btn-red">🗑️ Taip, trinti</button>
+            <a href="/" class="btn btn-gray">Atšaukti</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

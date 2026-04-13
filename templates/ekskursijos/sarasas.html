@@ -1,0 +1,40 @@
+{% extends 'ekskursijos/base.html' %}
+{% block title %}Ekskursijų sąrašas{% endblock %}
+{% block content %}
+<h1>Ekskursijų sąrašas</h1>
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Pavadinimas</th>
+            <th>Vieta</th>
+            <th>Trukmė</th>
+            <th>Kaina</th>
+            <th>Aktyvi</th>
+            <th>Veiksmai</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for e in ekskursijos %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td><a href="/{{ e.pk }}/">{{ e.pavadinimas }}</a></td>
+            <td>{{ e.vieta }}</td>
+            <td>{{ e.trukme_val }} val.</td>
+            <td>{{ e.kaina }} €</td>
+            <td>{% if e.aktyvi %}✅{% else %}❌{% endif %}</td>
+            <td class="veiksmai">
+                <a href="/{{ e.pk }}/redaguoti/" class="btn btn-blue">✏️ Redaguoti</a>
+                <a href="/{{ e.pk }}/trinti/"    class="btn btn-red">🗑️ Trinti</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="7" style="text-align:center; padding:2rem; color:#888;">
+                Nėra ekskursijų. <a href="/prideti/">Pridėk pirmą!</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
