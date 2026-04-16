@@ -7,4 +7,4 @@ urlpatterns = [
     path('prideti/',            views.prideti,   name='prideti'),
     path('<int:pk>/redaguoti/', views.redaguoti, name='redaguoti'),
     path('<int:pk>/trinti/',    views.trinti,    name='trinti'),
-]
+]  
