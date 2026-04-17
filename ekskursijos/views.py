@@ -4,35 +4,60 @@ from django.utils import timezone
 from .models import Ekskursija, Profile, EkskursijosDalyvavimas
 from .forms import EkskursijaForma, PaskelbtiForma
 
-def gauti_role(user):
+def checkRole(user):
+    # Matches checkRole() call in Valdyti sequence diagram
     try:
         return user.profile.role
     except Profile.DoesNotExist:
         return None
-    
+
+def checkIfEmptyList(ekskursijos):
+    # Matches checkIfEmptyList() self-call in Peržiūrėti sequence diagram
+    return not ekskursijos.exists()
+
+def showAlert():
+    # Matches showAlert() call in Peržiūrėti sequence diagram
+    return "Neturite prieigos prie šio puslapio."
+
+def getEnrolledPupils(ekskursija):
+    # Matches getEnrolledPupils() call in Valdyti sequence diagram
+    return EkskursijosDalyvavimas.objects.filter(
+        ekskursija=ekskursija, statusas='dalyvauja'
+    ).select_related('mokinys')
+
+def checkDate(data):
+    # Matches checkDate() self-call in Valdyti sequence diagram
+    return data >= timezone.now().date()
+
 @login_required
-def sarasas(request):
-    role = gauti_role(request.user)
-    ekskursijos = Ekskursija.objects.all()
+def getExcursionList(request):
+    # Matches getExcursionList() call in Peržiūrėti sequence diagram
+    role = checkRole(request.user)
+    ekskursijos = Ekskursija.objects.all()  # matches all() call in diagram
 
     if request.method == 'POST' and role == 'mokytojas':
+        # matches delete() call in diagram
         ids = request.POST.getlist('trinti_ids')
         Ekskursija.objects.filter(pk__in=ids).delete()
-        return redirect('sarasas')
+        return redirect('getExcursionList')
+
+    empty = checkIfEmptyList(ekskursijos)  # matches checkIfEmptyList() in diagram
+    alert = showAlert() if role not in ['mokytojas', 'mokinys'] else None  # matches showAlert()
 
     return render(request, 'ekskursijos/sarasas.html', {
         'ekskursijos': ekskursijos,
         'role': role,
+        'empty': empty,
+        'alert': alert,
     })
 
 @login_required
-def detaliai(request, pk):
-    e = get_object_or_404(Ekskursija, pk=pk)
-    role = gauti_role(request.user)
+def openExcursion(request, pk):
+    # Matches open() call in Valdyti sequence diagram
+    e = get_object_or_404(Ekskursija, pk=pk)  # matches get() call in diagram
+    role = checkRole(request.user)             # matches checkRole() in diagram
 
-    dalyviai = EkskursijosDalyvavimas.objects.filter(
-        ekskursija=e, statusas='dalyvauja'
-    ).select_related('mokinys')
+    dalyviai = getEnrolledPupils(e)            # matches getEnrolledPupils() in diagram
 
     forma = PaskelbtiForma()
 
@@ -40,13 +65,13 @@ def detaliai(request, pk):
         forma = PaskelbtiForma(request.POST)
         if forma.is_valid():
             data = forma.cleaned_data['ekskursijos_data']
-            if data <timezone.now().date():
-                forma.add_error('ekskursijos_data', 'Data negali būti praeityje')
-            else: 
+            if not checkDate(data):            # matches checkDate() in diagram
+                forma.add_error('ekskursijos_data', 'Data negali būti praeityje.')  # matches error reply
+            else:
                 e.ekskursijos_data = data
                 e.statusas = 'paskelbta'
-                e.save()
-                return redirect('detaliai', pk=pk)
+                e.save()                       # matches success message in diagram
+                return redirect('openExcursion', pk=pk)
 
     return render(request, 'ekskursijos/detaliai.html', {
         'ekskursija': e,
@@ -57,12 +82,13 @@ def detaliai(request, pk):
 
 @login_required
 def prisijungti(request, pk):
+    # Handles Prisijungti prie ekskursijų ref in Peržiūrėti diagram
     e = get_object_or_404(Ekskursija, pk=pk)
-    role = gauti_role(request.user)
+    role = checkRole(request.user)
 
     if role != 'mokinys':
-        return redirect('sarasas')
-    
+        return redirect('getExcursionList')
+
     dalyvavimas, sukurta = EkskursijosDalyvavimas.objects.get_or_create(
         mokinys=request.user,
         ekskursija=e,
@@ -72,35 +98,37 @@ def prisijungti(request, pk):
         dalyvavimas.statusas = 'dalyvauja'
         dalyvavimas.save()
 
-    return redirect('detaliai', pk=pk)
+    return redirect('openExcursion', pk=pk)
 
 @login_required
-def prideti(request):
-    if gauti_role(request.user) != 'mokytojas':
-        return redirect('sarasas')
-    forma = EkskursijaForma(request.POST or None, request.FILES or None)
+def addExcursion(request):
+    # Matches addExcursion() call in Peržiūrėti sequence diagram
+    if checkRole(request.user) != 'mokytojas':
+        return redirect('getExcursionList')
+    forma = EkskursijaForma(request.POST or None)
     if forma.is_valid():
-        forma.save()
-        return redirect('sarasas')
+        forma.save()                           # matches create() call in diagram
+        return redirect('getExcursionList')    # matches success message reply in diagram
     return render(request, 'ekskursijos/forma.html', {'forma': forma, 'veiksmas': 'Pridėti'})
 
 @login_required
 def redaguoti(request, pk):
-    if gauti_role(request.user) != 'mokytojas':
-        return redirect('sarasas')
+    if checkRole(request.user) != 'mokytojas':
+        return redirect('getExcursionList')
     e = get_object_or_404(Ekskursija, pk=pk)
-    forma = EkskursijaForma(request.POST or None, request.FILES or None, instance=e)
+    forma = EkskursijaForma(request.POST or None, instance=e)
     if forma.is_valid():
         forma.save()
-        return redirect('sarasas')
+        return redirect('getExcursionList')
     return render(request, 'ekskursijos/forma.html', {'forma': forma, 'veiksmas': 'Redaguoti'})
 
 @login_required
-def trinti(request, pk):
-    if gauti_role(request.user) != 'mokytojas':
-        return redirect('sarasas')
+def deleteExcursion(request, pk):
+    # Matches delete() call in Peržiūrėti sequence diagram (single excursion)
+    if checkRole(request.user) != 'mokytojas':
+        return redirect('getExcursionList')
     e = get_object_or_404(Ekskursija, pk=pk)
     if request.method == 'POST':
-        e.delete()
-        return redirect('sarasas')
+        e.delete()                             # matches delete() on Excursion entity in diagram
+        return redirect('getExcursionList')
     return render(request, 'ekskursijos/trinti.html', {'ekskursija': e})

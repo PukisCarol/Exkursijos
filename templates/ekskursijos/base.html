@@ -35,14 +35,14 @@
 </head>
 <body>
 <nav>
-    <a href="/">🗺️ Ekskursijos</a>
+    <a href="{% url 'getExcursionList' %}">Ekskursijos</a>
     {% if user.is_authenticated %}
         <span style="color:white; margin-left:auto;">{{ user.username }}</span>
         <form method="post" action="/logout/" style="margin:0;">
             {% csrf_token %}
             <button type="submit" style="background:none; border:none; color:white; 
                     cursor:pointer; font-size:1.1rem; text-decoration:underline;">
-                🚪 Atsijungti
+                  Atsijungti
             </button>
         </form>
     {% endif %}

@@ -7,8 +7,8 @@
     <form method="post">
         {% csrf_token %}
         <div style="margin-bottom:1rem;">
-            <a href="/prideti/" class="btn btn-green">➕ Kurti naują ekskursiją</a>
-            <button type="submit" class="btn btn-red" style="margin-left:.5rem;">🗑️ Trinti pažymėtas</button>
+            <a href="{% url 'addExcursion' %}" class="btn btn-green">Kurti naują ekskursiją</a>
+            <button type="submit" class="btn btn-red" style="margin-left:.5rem;">Trinti pažymėtas</button>
         </div>
 {% endif %}
 
@@ -31,17 +31,17 @@
             <td><input type="checkbox" name="trinti_ids" value="{{ e.pk }}"></td>
             {% endif %}
             <td>{{ forloop.counter }}</td>
-            <td><a href="/{{ e.pk }}/">{{ e.pavadinimas }}</a></td>
+            <td><a href="{% url 'openExcursion' e.pk %}">{{ e.pavadinimas }}</a></td>
             <td>{{ e.pradžios_laikas }}</td>
             <td>{{ e.pabaigos_laikas }}</td>
             <td>{{ e.get_statusas_display }}</td> <!-- shows human-readable status label -->
             <td class="veiksmai">
                 {% if role == 'mokytojas' %}
-                    <a href="/{{ e.pk }}/redaguoti/" class="btn btn-blue">✏️ Redaguoti</a>
+                    <a href="{% url 'redaguoti' e.pk %}" class="btn btn-blue">Redaguoti</a>
                 {% elif role == 'mokinys' %}
-                    <a href="/{{ e.pk }}/prisijungti/" class="btn btn-green">➕ Prisijungti</a>
+                    <a href="{% url 'prisijungti' e.pk %}" class="btn btn-green">Prisijungti</a>
                 {% else %}
-                    <span style="color:#c0392b;">⚠️ Nėra prieigos</span>
+                    <span style="color:#c0392b;">Nėra prieigos</span>
                 {% endif %}
             </td>
         </tr>

@@ -9,8 +9,8 @@
     <form method="post">
         {% csrf_token %}
         <div class="veiksmai">
-            <button type="submit" class="btn btn-red">🗑️ Taip, trinti</button>
-            <a href="/" class="btn btn-gray">Atšaukti</a>
+            <button type="submit" class="btn btn-red">Taip, trinti</button>
+            <a href="{% url 'getExcursionList' %}" class="btn btn-gray">Atšaukti</a>
         </div>
     </form>
 </div>
