@@ -8,15 +8,11 @@ class Ekskursija(models.Model):
         ('marsrutas', 'Sudarytas maršrutas'),
         ('paskelbta', 'Paskelbta ekskursija'),
     ]
-    pavadinimas = models.CharField(max_length=200)
-    aprasymas   = models.TextField()
-    vieta       = models.CharField(max_length=200)
-    kaina       = models.DecimalField(max_digits=8, decimal_places=2)
-    trukme_val  = models.PositiveIntegerField()
-    nuotrauka   = models.ImageField(upload_to='ekskursijos/', blank=True, null=True)
-    aktyvi      = models.BooleanField(default=True)
-    statusas    = models.CharField(max_length=20, choices=STATUSAS, default='sukurta')
+    pavadinimas      = models.CharField(max_length=200)
+    pradžios_laikas  = models.DateField()
+    pabaigos_laikas  = models.DateField()
     ekskursijos_data = models.DateField(null=True, blank=True)
+    statusas         = models.CharField(max_length=20, choices=STATUSAS, default='sukurta')
 
     def __str__(self):
         return self.pavadinimas

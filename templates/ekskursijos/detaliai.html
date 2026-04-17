@@ -2,19 +2,61 @@
 {% block title %}{{ ekskursija.pavadinimas }}{% endblock %}
 {% block content %}
 <h1>{{ ekskursija.pavadinimas }}</h1>
-{% if ekskursija.nuotrauka %}
-<img src="{{ ekskursija.nuotrauka.url }}"
-     style="max-width:600px; border-radius:10px; margin-bottom:1.5rem; display:block;">
-{% endif %}
+
 <div style="background:white; padding:1.5rem; border-radius:10px; max-width:600px;">
-    <p style="margin:.5rem 0;">📍 <strong>Vieta:</strong> {{ ekskursija.vieta }}</p>
-    <p style="margin:.5rem 0;">⏱ <strong>Trukmė:</strong> {{ ekskursija.trukme_val }} val.</p>
-    <p style="margin:.5rem 0;">💶 <strong>Kaina:</strong> {{ ekskursija.kaina }} €</p>
-    <p style="margin:1rem 0;">{{ ekskursija.aprasymas }}</p>
+    <p style="margin:.5rem 0;">📅 <strong>Pradžios laikas:</strong> {{ ekskursija.pradžios_laikas }}</p>
+    <p style="margin:.5rem 0;">📅 <strong>Pabaigos laikas:</strong> {{ ekskursija.pabaigos_laikas }}</p>
+    <p style="margin:.5rem 0;">📌 <strong>Statusas:</strong> {{ ekskursija.get_statusas_display }}</p>
+    {% if ekskursija.ekskursijos_data %}
+    <p style="margin:.5rem 0;">🗓️ <strong>Ekskursijos data:</strong> {{ ekskursija.ekskursijos_data }}</p>
+    {% endif %}
 </div>
-<div class="veiksmai" style="margin-top:1.5rem;">
-    <a href="/{{ ekskursija.pk }}/redaguoti/" class="btn btn-blue">✏️ Redaguoti</a>
-    <a href="/{{ ekskursija.pk }}/trinti/"    class="btn btn-red">🗑️ Trinti</a>
-    <a href="/"                               class="btn btn-gray">← Grįžti</a>
-</div>
+
+{% if role == 'mokytojas' %}
+
+    <h2 style="margin-top:2rem;">Dalyvaujantys mokiniai</h2>
+    {% if dalyviai %}
+    <ul style="background:white; padding:1.5rem; border-radius:10px; max-width:600px;">
+        {% for d in dalyviai %}
+        <li>{{ d.mokinys.username }}</li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p style="color:#888;">Dar nėra dalyvaujančių mokinių.</p>
+    {% endif %}
+
+    <h2 style="margin-top:2rem;">Paskelbti ekskursijos datą</h2>
+    <div class="forma-wrap">
+        <form method="post">
+            {% csrf_token %}
+            {% for laukas in forma %}
+            <div class="laukas">
+                <label>{{ laukas.label }}</label>
+                {{ laukas }}
+                {% if laukas.errors %}
+                <p style="color:red; font-size:.85rem;">{{ laukas.errors }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-green">📢 Paskelbti</button>
+        </form>
+    </div>
+
+    <div class="veiksmai" style="margin-top:1.5rem;">
+        <a href="/{{ ekskursija.pk }}/redaguoti/" class="btn btn-blue">✏️ Redaguoti</a>
+        <a href="/{{ ekskursija.pk }}/trinti/"    class="btn btn-red">🗑️ Trinti</a>
+        <a href="/"                               class="btn btn-gray">← Grįžti</a>
+    </div>
+
+{% elif role == 'mokinys' %}
+    <div class="veiksmai" style="margin-top:1.5rem;">
+        <a href="/{{ ekskursija.pk }}/prisijungti/" class="btn btn-green">➕ Prisijungti prie ekskursijos</a>
+        <a href="/"                                  class="btn btn-gray">← Grįžti</a>
+    </div>
+
+{% else %}
+    <p style="color:#c0392b; margin-top:1rem;">⚠️ Neturite prieigos peržiūrėti šią ekskursiją.</p>
+    <a href="/" class="btn btn-gray" style="margin-top:1rem;">← Grįžti</a>
+{% endif %}
+
 {% endblock %}

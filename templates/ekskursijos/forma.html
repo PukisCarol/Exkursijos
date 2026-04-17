@@ -3,7 +3,7 @@
 {% block content %}
 <h1>{{ veiksmas }} ekskursiją</h1>
 <div class="forma-wrap">
-    <form method="post" enctype="multipart/form-data">
+    <form method="post">
         {% csrf_token %}
         {% for laukas in forma %}
         <div class="laukas">

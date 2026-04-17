@@ -4,7 +4,14 @@ from .models import Ekskursija
 class EkskursijaForma(forms.ModelForm):
     class Meta:
         model  = Ekskursija
-        fields = ['pavadinimas', 'aprasymas', 'vieta', 'kaina', 'trukme_val', 'nuotrauka', 'aktyvi']
+        fields = ['pavadinimas', 'pradžios_laikas', 'pabaigos_laikas']
         widgets = {
-            'aprasymas': forms.Textarea(attrs={'rows': 4}),
+            'pradžios_laikas': forms.DateInput(attrs={'type': 'date'}),
+            'pabaigos_laikas': forms.DateInput(attrs={'type': 'date'}),
         }
+
+class PaskelbtiForma(forms.Form):
+    ekskursijos_data = forms.DateField(
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label='Ekskursijos data',
+    )

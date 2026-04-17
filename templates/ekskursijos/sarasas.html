@@ -2,39 +2,61 @@
 {% block title %}Ekskursijų sąrašas{% endblock %}
 {% block content %}
 <h1>Ekskursijų sąrašas</h1>
+
+{% if role == 'mokytojas' %}
+    <form method="post">
+        {% csrf_token %}
+        <div style="margin-bottom:1rem;">
+            <a href="/prideti/" class="btn btn-green">➕ Kurti naują ekskursiją</a>
+            <button type="submit" class="btn btn-red" style="margin-left:.5rem;">🗑️ Trinti pažymėtas</button>
+        </div>
+{% endif %}
+
 <table>
     <thead>
         <tr>
+            {% if role == 'mokytojas' %}<th></th>{% endif %}
             <th>#</th>
             <th>Pavadinimas</th>
-            <th>Vieta</th>
-            <th>Trukmė</th>
-            <th>Kaina</th>
-            <th>Aktyvi</th>
+            <th>Pradžios laikas</th>
+            <th>Pabaigos laikas</th>
+            <th>Statusas</th>
             <th>Veiksmai</th>
         </tr>
     </thead>
     <tbody>
         {% for e in ekskursijos %}
         <tr>
+            {% if role == 'mokytojas' %}
+            <td><input type="checkbox" name="trinti_ids" value="{{ e.pk }}"></td>
+            {% endif %}
             <td>{{ forloop.counter }}</td>
             <td><a href="/{{ e.pk }}/">{{ e.pavadinimas }}</a></td>
-            <td>{{ e.vieta }}</td>
-            <td>{{ e.trukme_val }} val.</td>
-            <td>{{ e.kaina }} €</td>
-            <td>{% if e.aktyvi %}✅{% else %}❌{% endif %}</td>
+            <td>{{ e.pradžios_laikas }}</td>
+            <td>{{ e.pabaigos_laikas }}</td>
+            <td>{{ e.get_statusas_display }}</td> <!-- shows human-readable status label -->
             <td class="veiksmai">
-                <a href="/{{ e.pk }}/redaguoti/" class="btn btn-blue">✏️ Redaguoti</a>
-                <a href="/{{ e.pk }}/trinti/"    class="btn btn-red">🗑️ Trinti</a>
+                {% if role == 'mokytojas' %}
+                    <a href="/{{ e.pk }}/redaguoti/" class="btn btn-blue">✏️ Redaguoti</a>
+                {% elif role == 'mokinys' %}
+                    <a href="/{{ e.pk }}/prisijungti/" class="btn btn-green">➕ Prisijungti</a>
+                {% else %}
+                    <span style="color:#c0392b;">⚠️ Nėra prieigos</span>
+                {% endif %}
             </td>
         </tr>
         {% empty %}
         <tr>
             <td colspan="7" style="text-align:center; padding:2rem; color:#888;">
-                Nėra ekskursijų. <a href="/prideti/">Pridėk pirmą!</a>
+                Nėra ekskursijų.
             </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+
+{% if role == 'mokytojas' %}
+    </form>
+{% endif %}
+
 {% endblock %}
