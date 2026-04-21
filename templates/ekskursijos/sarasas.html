@@ -34,7 +34,7 @@
             <td><a href="{% url 'openExcursion' e.pk %}">{{ e.pavadinimas }}</a></td>
             <td>{{ e.pradžios_laikas }}</td>
             <td>{{ e.pabaigos_laikas }}</td>
-            <td>{{ e.get_statusas_display }}</td> <!-- shows human-readable status label -->
+            <td>{{ e.get_statusas_display }}</td>
             <td class="veiksmai">
                 {% if role == 'mokytojas' %}
                     <a href="{% url 'redaguoti' e.pk %}" class="btn btn-blue">Redaguoti</a>
