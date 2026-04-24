@@ -5,7 +5,6 @@ from .excursionEnrollment import getAllExcursionParticipants
 from ...models.models import Ekskursija, Profile, EkskursijosDalyvavimas
 from ...forms import EkskursijaForma, PaskelbtiForma
 
-
 def checkRole(user):
     try:
         return user.profile.role
@@ -29,6 +28,7 @@ def openExcursion(request, pk):
         forma = PaskelbtiForma(request.POST)
         if forma.is_valid():
             data = forma.cleaned_data['ekskursijos_data']
+
             if not checkDate(data):
                 forma.add_error('ekskursijos_data', 'Data negali būti praeityje.')
             else:
@@ -49,9 +49,14 @@ def addExcursion(request):
     if checkRole(request.user) != 'mokytojas':
         return redirect('getExcursionList')
     forma = EkskursijaForma(request.POST or None)
-    if forma.is_valid():
-        forma.save()
-        return redirect('getExcursionList')
+    if request.method == 'POST':
+        if forma.is_valid():
+            ekskursijos_data = forma.cleaned_data.get('ekskursijos_data')
+            if ekskursijos_data and not checkDate(ekskursijos_data):
+                forma.add_error('ekskursijos_data', 'Data ir laikas negali būti praeityje.')
+            else:
+                forma.save()
+                return redirect('getExcursionList')
     return render(request, 'ekskursijos/teacher/createExcursionPage.html', 
                 {'forma': forma,
                 'veiksmas': 'Pridėti'})
@@ -76,9 +81,14 @@ def editExcursion(request, pk):
         return redirect('getExcursionList')
     e = get_object_or_404(Ekskursija, pk=pk)
     forma = EkskursijaForma(request.POST or None, instance=e)
-    if forma.is_valid():
-        forma.save()
-        return redirect('getExcursionList')
+    if request.method == 'POST':
+        if forma.is_valid():
+            ekskursijos_data = forma.cleaned_data.get('ekskursijos_data')
+            if ekskursijos_data and not checkDate(ekskursijos_data):
+                forma.add_error('ekskursijos_data', 'Data ir laikas negali būti praeityje.')
+            else:
+                forma.save()
+                return redirect('getExcursionList')
     return render(request, 'ekskursijos/teacher/createExcursionPage.html', 
                 {'forma': forma, 
                 'veiksmas': 'Redaguoti'})

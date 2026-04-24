@@ -4,11 +4,11 @@
 <h1>{{ ekskursija.pavadinimas }}</h1>
 
 <div style="background:white; padding:1.5rem; border-radius:10px; max-width:600px;">
-    <p style="margin:.5rem 0;"><strong>Pradžios laikas:</strong> {{ ekskursija.pradžios_laikas }}</p>
-    <p style="margin:.5rem 0;"><strong>Pabaigos laikas:</strong> {{ ekskursija.pabaigos_laikas }}</p>
+    <p style="margin:.5rem 0;"><strong>Pradžios laikas:</strong> {{ ekskursija.pradžios_laikas|time:'H:i' }}</p>
+    <p style="margin:.5rem 0;"><strong>Pabaigos laikas:</strong> {{ ekskursija.pabaigos_laikas|time:'H:i' }}</p>
     <p style="margin:.5rem 0;"><strong>Statusas:</strong> {{ ekskursija.get_statusas_display }}</p>
     {% if ekskursija.ekskursijos_data %}
-    <p style="margin:.5rem 0;"><strong>Ekskursijos data:</strong> {{ ekskursija.ekskursijos_data }}</p>
+    <p style="margin:.5rem 0;"><strong>Ekskursijos data:</strong> {{ ekskursija.ekskursijos_data|date:'Y-m-d' }}</p>
     {% endif %}
 </div>
 

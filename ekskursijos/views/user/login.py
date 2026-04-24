@@ -5,7 +5,6 @@ from .excursion import checkRole
 from ...models.models import Ekskursija, Profile, EkskursijosDalyvavimas
 from ...forms import EkskursijaForma, PaskelbtiForma
 
-
 @login_required
 def authenticateLoginInfo(request, pk):
     e = get_object_or_404(Ekskursija, pk=pk)

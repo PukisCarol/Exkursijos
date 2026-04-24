@@ -9,8 +9,8 @@ class Ekskursija(models.Model):
         ('paskelbta', 'Paskelbta ekskursija'),
     ]
     pavadinimas      = models.CharField(max_length=200)
-    pradžios_laikas  = models.DateField()
-    pabaigos_laikas  = models.DateField()
+    pradžios_laikas  = models.TimeField()
+    pabaigos_laikas  = models.TimeField()
     ekskursijos_data = models.DateField(null=True, blank=True)
     statusas         = models.CharField(max_length=20, choices=STATUSAS, default='sukurta')
 

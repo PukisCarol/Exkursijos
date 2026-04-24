@@ -18,6 +18,7 @@
             {% if role == 'mokytojas' %}<th></th>{% endif %}
             <th>#</th>
             <th>Pavadinimas</th>
+            <th>Ekskursijos data</th>
             <th>Pradžios laikas</th>
             <th>Pabaigos laikas</th>
             <th>Statusas</th>
@@ -32,8 +33,9 @@
             {% endif %}
             <td>{{ forloop.counter }}</td>
             <td><a href="{% url 'openExcursion' e.pk %}">{{ e.pavadinimas }}</a></td>
-            <td>{{ e.pradžios_laikas }}</td>
-            <td>{{ e.pabaigos_laikas }}</td>
+            <td>{% if e.ekskursijos_data %}{{ e.ekskursijos_data|date:'Y-m-d' }}{% else %}-{% endif %}</td>
+            <td>{{ e.pradžios_laikas|time:'H:i' }}</td>
+            <td>{{ e.pabaigos_laikas|time:'H:i' }}</td>
             <td>{{ e.get_statusas_display }}</td>
             <td class="veiksmai">
                 {% if role == 'mokytojas' %}
