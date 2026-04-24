@@ -1,5 +1,5 @@
 from django import forms
-from .models import Ekskursija
+from .models.models import Ekskursija
 
 class EkskursijaForma(forms.ModelForm):
     class Meta:

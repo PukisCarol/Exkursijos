@@ -1,4 +1,4 @@
-{% extends 'ekskursijos/base.html' %}
+{% extends 'ekskursijos/user/basePage.html' %}
 {% block title %}{{ ekskursija.pavadinimas }}{% endblock %}
 {% block content %}
 <h1>{{ ekskursija.pavadinimas }}</h1>
@@ -13,6 +13,33 @@
 </div>
 
 {% if role == 'mokytojas' %}
+
+    <style>
+        #delete-modal-toggle {
+            display: none;
+        }
+        .delete-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        #delete-modal-toggle:checked ~ .delete-modal {
+            display: flex;
+        }
+        .delete-modal-box {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            width: min(92vw, 420px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, .2);
+            position: relative;
+            z-index: 1001;
+        }
+    </style>
 
     <h2 style="margin-top:2rem;">Dalyvaujantys mokiniai</h2>
     {% if dalyviai %}
@@ -42,10 +69,29 @@
         </form>
     </div>
 
+    <input type="checkbox" id="delete-modal-toggle" />
+
     <div class="veiksmai" style="margin-top:1.5rem;">
         <a href="{% url 'redaguoti' ekskursija.pk %}" class="btn btn-blue">Redaguoti</a>
-        <a href="{% url 'deleteExcursion' ekskursija.pk %}" class="btn btn-red">Trinti</a>
+        <label for="delete-modal-toggle" class="btn btn-red">Trinti</label>
         <a href="{% url 'getExcursionList' %}" class="btn btn-gray">← Grįžti</a>
+    </div>
+
+    <div class="delete-modal">
+        <label for="delete-modal-toggle" style="position:absolute; inset:0;" aria-label="Uždaryti"></label>
+        <div class="delete-modal-box">
+            <h3 style="margin-top:0;">Trinti ekskursiją</h3>
+            <p style="margin-bottom:1.2rem;">
+                Ar tikrai nori ištrinti <strong>{{ ekskursija.pavadinimas }}</strong>? Šio veiksmo negalima atšaukti.
+            </p>
+            <form method="post" action="{% url 'deleteExcursion' ekskursija.pk %}">
+                {% csrf_token %}
+                <div class="veiksmai">
+                    <button type="submit" class="btn btn-red">Taip, trinti</button>
+                    <label for="delete-modal-toggle" class="btn btn-gray">Atšaukti</label>
+                </div>
+            </form>
+        </div>
     </div>
 
 {% elif role == 'mokinys' %}

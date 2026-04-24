@@ -1,11 +1,18 @@
 from django.urls import path
-from . import views
+from .views.user.excursion import (
+    addExcursion,
+    deleteExcursion,
+    editExcursion,
+    open as getExcursionList,
+    openExcursion,
+)
+from .views.user.login import authenticateLoginInfo
 
 urlpatterns = [
-    path('',                      views.getExcursionList, name='getExcursionList'),
-    path('<int:pk>/',             views.openExcursion,    name='openExcursion'),
-    path('prideti/',              views.addExcursion,     name='addExcursion'),
-    path('<int:pk>/redaguoti/',   views.redaguoti,        name='redaguoti'),
-    path('<int:pk>/trinti/',      views.deleteExcursion,  name='deleteExcursion'),
-    path('<int:pk>/prisijungti/', views.prisijungti,      name='prisijungti'),
+    path('',                      getExcursionList,   name='getExcursionList'),
+    path('<int:pk>/',             openExcursion,      name='openExcursion'),
+    path('prideti/',              addExcursion,       name='addExcursion'),
+    path('<int:pk>/redaguoti/',   editExcursion,      name='redaguoti'),
+    path('<int:pk>/trinti/',      deleteExcursion,    name='deleteExcursion'),
+    path('<int:pk>/prisijungti/', authenticateLoginInfo, name='prisijungti'),
 ]  
