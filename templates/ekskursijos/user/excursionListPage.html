@@ -7,9 +7,13 @@
     <form method="post">
         {% csrf_token %}
         <div style="margin-bottom:1rem;">
-            <a href="{% url 'addExcursion' %}" class="btn btn-green">Kurti naują ekskursiją</a>
+            <a href="{% url 'CreateExcursionPage' %}" class="btn btn-green">Kurti naują ekskursiją</a>
             <button type="submit" class="btn btn-red" style="margin-left:.5rem;">Trinti pažymėtas</button>
         </div>
+{% endif %}
+
+{% if role == 'mokinys' %}
+<a href="{% url 'JoinExcursionPage' %}" class="btn btn-green" style="margin-bottom:1rem;">Prisijungti prie ekskursijų</a>
 {% endif %}
 
 <table>
@@ -32,18 +36,19 @@
             <td><input type="checkbox" name="trinti_ids" value="{{ e.pk }}"></td>
             {% endif %}
             <td>{{ forloop.counter }}</td>
-            <td><a href="{% url 'openExcursion' e.pk %}">{{ e.pavadinimas }}</a></td>
+            <td><a href="{% url 'ExcursionPage' e.pk %}">{{ e.pavadinimas }}</a></td>
             <td>{% if e.ekskursijos_data %}{{ e.ekskursijos_data|date:'Y-m-d' }}{% else %}-{% endif %}</td>
             <td>{{ e.pradžios_laikas|time:'H:i' }}</td>
             <td>{{ e.pabaigos_laikas|time:'H:i' }}</td>
             <td>{{ e.get_statusas_display }}</td>
             <td class="veiksmai">
                 {% if role == 'mokytojas' %}
-                    <a href="{% url 'redaguoti' e.pk %}" class="btn btn-blue">Redaguoti</a>
-                {% elif role == 'mokinys' %}
-                    <a href="{% url 'prisijungti' e.pk %}" class="btn btn-green">Prisijungti</a>
                 {% else %}
-                    <span style="color:#c0392b;">Nėra prieigos</span>
+                    {% if role == 'mokinys' %}
+                        {# Removed per-excursion join button as requested #}
+                    {% else %}
+                        <span style="color:#c0392b;">Nėra prieigos</span>
+                    {% endif %}
                 {% endif %}
             </td>
         </tr>

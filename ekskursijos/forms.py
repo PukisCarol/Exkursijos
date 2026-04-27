@@ -4,11 +4,10 @@ from .models.models import Ekskursija
 class EkskursijaForma(forms.ModelForm):
     class Meta:
         model  = Ekskursija
-        fields = ['pavadinimas', 'pradžios_laikas', 'pabaigos_laikas', 'ekskursijos_data']
+        fields = ['pavadinimas', 'pradžios_laikas', 'pabaigos_laikas']
         widgets = {
             'pradžios_laikas': forms.TimeInput(attrs={'type': 'time'}),
             'pabaigos_laikas': forms.TimeInput(attrs={'type': 'time'}),
-            'ekskursijos_data': forms.DateInput(attrs={'type': 'date'}),
         }
 
 class PaskelbtiForma(forms.Form):

@@ -41,17 +41,6 @@
         }
     </style>
 
-    <h2 style="margin-top:2rem;">Dalyvaujantys mokiniai</h2>
-    {% if dalyviai %}
-    <ul style="background:white; padding:1.5rem; border-radius:10px; max-width:600px;">
-        {% for d in dalyviai %}
-        <li>{{ d.mokinys.username }}</li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <p style="color:#888;">Dar nėra dalyvaujančių mokinių.</p>
-    {% endif %}
-
     <h2 style="margin-top:2rem;">Paskelbti ekskursijos datą</h2>
     <div class="forma-wrap">
         <form method="post">
@@ -72,9 +61,10 @@
     <input type="checkbox" id="delete-modal-toggle" />
 
     <div class="veiksmai" style="margin-top:1.5rem;">
-        <a href="{% url 'redaguoti' ekskursija.pk %}" class="btn btn-blue">Redaguoti</a>
+        <a href="{% url 'PupilsListPage' ekskursija.pk %}" class="btn btn-green">Peržiūrėti užsiregistravusių sąrašą</a>
+        <button type="button" class="btn btn-green">Administruoti daiktų sąrašą</button>
         <label for="delete-modal-toggle" class="btn btn-red">Trinti</label>
-        <a href="{% url 'getExcursionList' %}" class="btn btn-gray">← Grįžti</a>
+        <a href="{% url 'excursionListPage' %}" class="btn btn-gray">← Grįžti</a>
     </div>
 
     <div class="delete-modal">
@@ -96,8 +86,8 @@
 
 {% elif role == 'mokinys' %}
     <div class="veiksmai" style="margin-top:1.5rem;">
-        <a href="{% url 'prisijungti' ekskursija.pk %}" class="btn btn-green">Prisijungti prie ekskursijos</a>
-        <a href="{% url 'getExcursionList' %}" class="btn btn-gray">← Grįžti</a>
+        <button type="button" class="btn btn-green">Valdyti rekomenduojamus daiktus</button>
+        <a href="{% url 'excursionListPage' %}" class="btn btn-gray">← Grįžti</a>
     </div>
 
 {% else %}

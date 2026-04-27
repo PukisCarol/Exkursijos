@@ -11,7 +11,7 @@ def authenticateLoginInfo(request, pk):
     role = checkRole(request.user)
 
     if role != 'mokinys':
-        return redirect('getExcursionList')
+        return redirect('excursionListPage')
 
     dalyvavimas, sukurta = EkskursijosDalyvavimas.objects.get_or_create(
         mokinys=request.user,
@@ -22,4 +22,4 @@ def authenticateLoginInfo(request, pk):
         dalyvavimas.statusas = 'dalyvauja'
         dalyvavimas.save()
 
-    return redirect('openExcursion', pk=pk)
+    return redirect('ExcursionPage', pk=pk)

@@ -1,0 +1,15 @@
+{% extends 'ekskursijos/user/basePage.html' %}
+{% block content %}
+<h2>Patvirtinkite ekskursijų ištrynimą</h2>
+<form method="post">
+    {% csrf_token %}
+    <ul>
+        {% for e in excursions %}
+            <li>{{ e.pavadinimas }} ({{ e.ekskursijos_data|date:'Y-m-d' }})</li>
+            <input type="hidden" name="confirm_delete_ids" value="{{ e.pk }}">
+        {% endfor %}
+    </ul>
+    <button type="submit" name="confirm_delete" value="yes" class="btn btn-red">Patvirtinti trynimą</button>
+    <a href="{% url 'excursionListPage' %}" class="btn btn-blue">Atšaukti</a>
+</form>
+{% endblock %}

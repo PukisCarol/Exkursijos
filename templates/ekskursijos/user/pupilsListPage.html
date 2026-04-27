@@ -1,0 +1,13 @@
+{% extends 'ekskursijos/user/basePage.html' %}
+{% block title %}Užsiregistravusių mokinių sąrašas{% endblock %}
+{% block content %}
+<h1>Užsiregistravusių mokinių sąrašas</h1>
+<ul style="background:white; padding:1.5rem; border-radius:10px; max-width:600px;">
+    {% for pupil in pupils %}
+        <li>{{ pupil.mokinys.username }}</li>
+    {% empty %}
+        <li>Nėra užsiregistravusių mokinių.</li>
+    {% endfor %}
+</ul>
+<a href="{% url 'ExcursionPage' excursion.pk %}" class="btn btn-gray">← Grįžti į ekskursiją</a>
+{% endblock %}

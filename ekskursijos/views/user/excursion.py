@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.utils import timezone
 from .excursionEnrollment import getAllExcursionParticipants
 from ...models.models import Ekskursija, Profile, EkskursijosDalyvavimas
@@ -22,7 +23,8 @@ def openExcursion(request, pk):
 
     dalyviai = getAllExcursionParticipants(e)
 
-    forma = PaskelbtiForma()
+    initial_data = {'ekskursijos_data': e.ekskursijos_data} if e.ekskursijos_data else {}
+    forma = PaskelbtiForma(initial=initial_data)
 
     if request.method == 'POST' and role == 'mokytojas':
         forma = PaskelbtiForma(request.POST)
@@ -35,7 +37,8 @@ def openExcursion(request, pk):
                 e.ekskursijos_data = data
                 e.statusas = 'paskelbta'
                 e.save()
-                return redirect('openExcursion', pk=pk)
+                messages.success(request, f'Ekskursijos data sėkmingai paskelbta: {data.strftime("%Y-%m-%d")}.')
+                return redirect('ExcursionPage', pk=pk)
 
     return render(request, 'ekskursijos/user/excursionPage.html', {
         'ekskursija': e,
@@ -47,16 +50,12 @@ def openExcursion(request, pk):
 @login_required
 def addExcursion(request):
     if checkRole(request.user) != 'mokytojas':
-        return redirect('getExcursionList')
+        return redirect('excursionListPage')
     forma = EkskursijaForma(request.POST or None)
     if request.method == 'POST':
         if forma.is_valid():
-            ekskursijos_data = forma.cleaned_data.get('ekskursijos_data')
-            if ekskursijos_data and not checkDate(ekskursijos_data):
-                forma.add_error('ekskursijos_data', 'Data ir laikas negali būti praeityje.')
-            else:
-                forma.save()
-                return redirect('getExcursionList')
+            forma.save()
+            return redirect('excursionListPage')
     return render(request, 'ekskursijos/teacher/createExcursionPage.html', 
                 {'forma': forma,
                 'veiksmas': 'Pridėti'})
@@ -71,27 +70,9 @@ def deleteExcursion(request, pk):
     e = get_object_or_404(Ekskursija, pk=pk)
     if request.method == 'POST':
         e.delete()
-        return redirect('getExcursionList')
+        return redirect('excursionListPage')
     return redirect('openExcursion', pk=pk)
 
-
-@login_required
-def editExcursion(request, pk):
-    if checkRole(request.user) != 'mokytojas':
-        return redirect('getExcursionList')
-    e = get_object_or_404(Ekskursija, pk=pk)
-    forma = EkskursijaForma(request.POST or None, instance=e)
-    if request.method == 'POST':
-        if forma.is_valid():
-            ekskursijos_data = forma.cleaned_data.get('ekskursijos_data')
-            if ekskursijos_data and not checkDate(ekskursijos_data):
-                forma.add_error('ekskursijos_data', 'Data ir laikas negali būti praeityje.')
-            else:
-                forma.save()
-                return redirect('getExcursionList')
-    return render(request, 'ekskursijos/teacher/createExcursionPage.html', 
-                {'forma': forma, 
-                'veiksmas': 'Redaguoti'})
 
 @login_required
 def open(request):
@@ -99,9 +80,17 @@ def open(request):
     ekskursijos = Ekskursija.objects.all()
 
     if request.method == 'POST' and role == 'mokytojas':
+        if 'confirm_delete' in request.POST:
+            ids = request.POST.getlist('confirm_delete_ids')
+            Ekskursija.objects.filter(pk__in=ids).delete()
+            return redirect('excursionListPage')
         ids = request.POST.getlist('trinti_ids')
-        Ekskursija.objects.filter(pk__in=ids).delete()
-        return redirect('getExcursionList')
+        if ids:
+            excursions_to_delete = Ekskursija.objects.filter(pk__in=ids)
+            return render(request, 'ekskursijos/user/deleteExcursionConfirm.html', {
+                'excursions': excursions_to_delete
+            })
+        return redirect('excursionListPage')
 
     empty = checkIfEmptyList(ekskursijos)
     alert = "Neturite prieigos prie šio puslapio." if role not in ['mokytojas', 'mokinys'] else None
@@ -112,3 +101,63 @@ def open(request):
         'empty': empty,
         'alert': alert,
     })
+
+@login_required
+def pupilsListPage(request, pk):
+    role = checkRole(request.user)
+    if role != 'mokytojas':
+        return redirect('openExcursion', pk=pk)
+    e = get_object_or_404(Ekskursija, pk=pk)
+    pupils = EkskursijosDalyvavimas.objects.filter(ekskursija=e, statusas='dalyvauja')
+    return render(request, 'ekskursijos/user/pupilsListPage.html', {
+        'pupils': pupils,
+        'excursion': e
+    })
+
+@login_required
+def joinExcursionPage(request):
+    role = checkRole(request.user)
+    if role != 'mokinys':
+        return redirect('excursionListPage')
+    excursions = Ekskursija.objects.all()
+    current_statuses = {}
+    for e in excursions:
+        dalyvavimas = EkskursijosDalyvavimas.objects.filter(mokinys=request.user, ekskursija=e).first()
+        if dalyvavimas:
+            current_statuses[e.pk] = dalyvavimas.statusas
+        else:
+            current_statuses[e.pk] = ''
+    success_message = error_message = ''
+    if request.method == 'POST':
+        updated = False
+        for e in excursions:
+            status = request.POST.get(f'status_{e.pk}')
+            if status:
+                dalyvavimas, _ = EkskursijosDalyvavimas.objects.get_or_create(mokinys=request.user, ekskursija=e)
+                dalyvavimas.statusas = status
+                dalyvavimas.save()
+                updated = True
+        # Refresh current_statuses after saving
+        current_statuses = {}
+        for e in excursions:
+            dalyvavimas = EkskursijosDalyvavimas.objects.filter(mokinys=request.user, ekskursija=e).first()
+            if dalyvavimas:
+                current_statuses[e.pk] = dalyvavimas.statusas
+            else:
+                current_statuses[e.pk] = ''
+        if updated:
+            success_message = 'Statusai sėkmingai atnaujinti.'
+        else:
+            error_message = 'Nepasirinkote jokių statusų.'
+    return render(request, 'ekskursijos/user/joinExcursionPage.html', {
+        'excursions': excursions,
+        'current_statuses': current_statuses,
+        'success_message': success_message,
+        'error_message': error_message,
+    })
+
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+
+def mainPage(request):
+    return render(request, 'ekskursijos/user/mainPage.html')

@@ -1,0 +1,46 @@
+{% extends 'ekskursijos/user/basePage.html' %}
+{% load join_excursion_extras %}
+{% block title %}Prisijungti prie ekskursijų{% endblock %}
+{% block content %}
+<h1>Prisijungti prie ekskursijų</h1>
+{% if success_message %}
+    <div class="alert alert-success">{{ success_message }}</div>
+{% endif %}
+{% if error_message %}
+    <div class="alert alert-error">{{ error_message }}</div>
+{% endif %}
+{% if excursions %}
+<form method="post">
+    {% csrf_token %}
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Pavadinimas</th>
+                <th>Statusas</th>
+                <th>Pasirinkite statusą</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for e in excursions %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ e.pavadinimas }}</td>
+                <td>{{ current_statuses|get_item:e.pk }}</td>
+                <td>
+                    <select name="status_{{ e.pk }}">
+                        <option value="">--</option>
+                        <option value="dalyvauja" {% if current_statuses|get_item:e.pk == 'dalyvauja' %}selected{% endif %}>Dalyvauja</option>
+                        <option value="nedalyvauja" {% if current_statuses|get_item:e.pk == 'nedalyvauja' %}selected{% endif %}>Nedalyvauja</option>
+                    </select>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <button type="submit" class="btn btn-green">Patvirtinti</button>
+</form>
+{% else %}
+    <div class="alert alert-error">Nėra ekskursijų.</div>
+{% endif %}
+{% endblock %}
