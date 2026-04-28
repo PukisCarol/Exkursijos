@@ -2,11 +2,11 @@ from django.urls import path
 from .views.user.excursion import (
     addExcursion,
     deleteExcursion,
-    open as getExcursionList,
+    getExcursionList,
     openExcursion,
     mainPage,
-    pupilsListPage,
-    joinExcursionPage
+    openJoinExcursionPage,
+    pupilsListPage
 )
 from .views.user.login import authenticateLoginInfo
 
@@ -16,7 +16,7 @@ urlpatterns = [
     path('ExcursionPage/<int:pk>/', openExcursion, name='ExcursionPage'),
     path('PupilsListPage/<int:pk>/', pupilsListPage, name='PupilsListPage'),
     path('CreateExcursionPage/', addExcursion, name='CreateExcursionPage'),
-    path('JoinExcursionPage/', joinExcursionPage, name='JoinExcursionPage'),
+    path('JoinExcursionPage/', openJoinExcursionPage, name='JoinExcursionPage'),
     path('<int:pk>/JoinExcursionPage/', authenticateLoginInfo, name='JoinExcursionPage'),
     path('<int:pk>/trinti/', deleteExcursion, name='deleteExcursion'),
 ]

@@ -75,7 +75,7 @@ def deleteExcursion(request, pk):
 
 
 @login_required
-def open(request):
+def getExcursionList(request):
     role = checkRole(request.user)
     ekskursijos = Ekskursija.objects.all()
 
@@ -115,7 +115,7 @@ def pupilsListPage(request, pk):
     })
 
 @login_required
-def joinExcursionPage(request):
+def openJoinExcursionPage(request):
     role = checkRole(request.user)
     if role != 'mokinys':
         return redirect('excursionListPage')
