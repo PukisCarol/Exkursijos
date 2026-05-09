@@ -1,10 +1,8 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
-from django.utils import timezone
-from ...models.models import Ekskursija, Profile, EkskursijosDalyvavimas
-from ...forms import EkskursijaForma, PaskelbtiForma
+from django.shortcuts import get_object_or_404
+from ...models.models import Excursion, ExcursionEnrollment
+
 
 def getAllExcursionParticipants(ekskursija):
-    return EkskursijosDalyvavimas.objects.filter(
-        ekskursija=ekskursija, statusas='dalyvauja'
-    ).select_related('mokinys')
+    return ExcursionEnrollment.objects.filter(
+        excursion=ekskursija, status='participating'
+    ).select_related('pupil')

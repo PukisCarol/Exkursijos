@@ -25,13 +25,13 @@
             {% for e in excursions %}
             <tr>
                 <td>{{ forloop.counter }}</td>
-                <td>{{ e.pavadinimas }}</td>
+                <td>{{ e.name }}</td>
                 <td>{{ current_statuses|get_item:e.pk }}</td>
                 <td>
                     <select name="status_{{ e.pk }}">
                         <option value="">--</option>
-                        <option value="dalyvauja" {% if current_statuses|get_item:e.pk == 'dalyvauja' %}selected{% endif %}>Dalyvauja</option>
-                        <option value="nedalyvauja" {% if current_statuses|get_item:e.pk == 'nedalyvauja' %}selected{% endif %}>Nedalyvauja</option>
+                        <option value="participating" {% if current_statuses|get_item:e.pk == 'participating' %}selected{% endif %}>Participating</option>
+                        <option value="not_participating" {% if current_statuses|get_item:e.pk == 'not_participating' %}selected{% endif %}>Not Participating</option>
                     </select>
                 </td>
             </tr>

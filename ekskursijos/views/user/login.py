@@ -1,25 +1,25 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from django.utils import timezone
 from .excursion import checkRole
-from ...models.models import Ekskursija, Profile, EkskursijosDalyvavimas
-from ...forms import EkskursijaForma, PaskelbtiForma
+from ...models.models import Excursion, Profile, ExcursionEnrollment
+from ...forms import ExcursionForm, PublishExcursionForm
+
 
 @login_required
 def authenticateLoginInfo(request, pk):
-    e = get_object_or_404(Ekskursija, pk=pk)
+    e = get_object_or_404(Excursion, pk=pk)
     role = checkRole(request.user)
 
-    if role != 'mokinys':
+    if role != 'pupil':
         return redirect('excursionListPage')
 
-    dalyvavimas, sukurta = EkskursijosDalyvavimas.objects.get_or_create(
-        mokinys=request.user,
-        ekskursija=e,
-        defaults={'statusas': 'dalyvauja'}
+    dalyvavimas, sukurta = ExcursionEnrollment.objects.get_or_create(
+        pupil=request.user,
+        excursion=e,
+        defaults={'status': 'participating'}
     )
     if not sukurta:
-        dalyvavimas.statusas = 'dalyvauja'
+        dalyvavimas.status = 'participating'
         dalyvavimas.save()
 
     return redirect('ExcursionPage', pk=pk)

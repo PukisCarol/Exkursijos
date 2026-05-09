@@ -1,7 +1,6 @@
 from django.contrib import admin
-from .models.models import Ekskursija, Profile, EkskursijosDalyvavimas
+from .models.models import Excursion, Profile, ExcursionEnrollment
 
-# Register your models here
-admin.site.register(Ekskursija)
+admin.site.register(Excursion)
 admin.site.register(Profile)
-admin.site.register(EkskursijosDalyvavimas)
+admin.site.register(ExcursionEnrollment)

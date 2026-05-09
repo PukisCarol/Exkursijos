@@ -1,18 +1,18 @@
 {% extends 'ekskursijos/user/basePage.html' %}
-{% block title %}{{ ekskursija.pavadinimas }}{% endblock %}
+{% block title %}{{ ekskursija.name }}{% endblock %}
 {% block content %}
-<h1>{{ ekskursija.pavadinimas }}</h1>
+<h1>{{ ekskursija.name }}</h1>
 
 <div style="background:white; padding:1.5rem; border-radius:10px; max-width:600px;">
-    <p style="margin:.5rem 0;"><strong>Pradžios laikas:</strong> {{ ekskursija.pradžios_laikas|time:'H:i' }}</p>
-    <p style="margin:.5rem 0;"><strong>Pabaigos laikas:</strong> {{ ekskursija.pabaigos_laikas|time:'H:i' }}</p>
-    <p style="margin:.5rem 0;"><strong>Statusas:</strong> {{ ekskursija.get_statusas_display }}</p>
-    {% if ekskursija.ekskursijos_data %}
-    <p style="margin:.5rem 0;"><strong>Ekskursijos data:</strong> {{ ekskursija.ekskursijos_data|date:'Y-m-d' }}</p>
+    <p style="margin:.5rem 0;"><strong>Start date:</strong> {{ ekskursija.start_date|date:'Y-m-d' }}</p>
+    <p style="margin:.5rem 0;"><strong>End date:</strong> {{ ekskursija.end_date|date:'Y-m-d' }}</p>
+    <p style="margin:.5rem 0;"><strong>Status:</strong> {{ ekskursija.get_status_display }}</p>
+    {% if ekskursija.excursion_date %}
+    <p style="margin:.5rem 0;"><strong>Excursion date:</strong> {{ ekskursija.excursion_date|date:'Y-m-d' }}</p>
     {% endif %}
 </div>
 
-{% if role == 'mokytojas' %}
+ {% if role == 'teacher' %}
 
     <style>
         #delete-modal-toggle {
@@ -72,7 +72,7 @@
         <div class="delete-modal-box">
             <h3 style="margin-top:0;">Trinti ekskursiją</h3>
             <p style="margin-bottom:1.2rem;">
-                Ar tikrai nori ištrinti <strong>{{ ekskursija.pavadinimas }}</strong>? Šio veiksmo negalima atšaukti.
+                 Ar tikrai nori ištrinti <strong>{{ ekskursija.name }}</strong>? Šio veiksmo negalima atšaukti.
             </p>
             <form method="post" action="{% url 'deleteExcursion' ekskursija.pk %}">
                 {% csrf_token %}
@@ -84,7 +84,7 @@
         </div>
     </div>
 
-{% elif role == 'mokinys' %}
+ {% elif role == 'pupil' %}
     <div class="veiksmai" style="margin-top:1.5rem;">
         <button type="button" class="btn btn-green">Valdyti rekomenduojamus daiktus</button>
         <a href="{% url 'excursionListPage' %}" class="btn btn-gray">← Grįžti</a>

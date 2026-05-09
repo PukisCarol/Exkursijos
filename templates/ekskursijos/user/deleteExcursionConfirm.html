@@ -5,7 +5,7 @@
     {% csrf_token %}
     <ul>
         {% for e in excursions %}
-            <li>{{ e.pavadinimas }} ({{ e.ekskursijos_data|date:'Y-m-d' }})</li>
+            <li>{{ e.name }} ({{ e.excursion_date|date:'Y-m-d' }})</li>
             <input type="hidden" name="confirm_delete_ids" value="{{ e.pk }}">
         {% endfor %}
     </ul>
