@@ -2,3 +2,4 @@
 /ekskursijos/__pycache__
 /ekskursijos/views/user/__pycache__
 /ekskursijos/models/__pycache__
+*.pyc

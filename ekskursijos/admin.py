@@ -1,6 +1,48 @@
 from django.contrib import admin
-from .models.models import Excursion, Profile, ExcursionEnrollment
+from .models.models import (
+    Profile,
+    Excursion,
+    ExcursionEnrollment,
+    Clothing,
+    CollectionRoute,
+    Collection,
+    Genre,
+    GenrePrice,
+    TypesPrice,
+    Song,
+    PlaceType,
+    Place,
+    ListOfPlaces,
+    ObjectAddressProgress,
+    Playlist,
+    PlaylistGenre,
+    PlaylistItem,
+    PupilBackpackItem,
+    SharedBackpackItem,
+    Item,
+    GoogleAddress,
+    Address,
+)
 
-admin.site.register(Excursion)
 admin.site.register(Profile)
+admin.site.register(Excursion)
 admin.site.register(ExcursionEnrollment)
+admin.site.register(Clothing)
+admin.site.register(CollectionRoute)
+admin.site.register(Collection)
+admin.site.register(Genre)
+admin.site.register(GenrePrice)
+admin.site.register(TypesPrice)
+admin.site.register(Song)
+admin.site.register(PlaceType)
+admin.site.register(Place)
+admin.site.register(ListOfPlaces)
+admin.site.register(ObjectAddressProgress)
+admin.site.register(Playlist)
+admin.site.register(PlaylistGenre)
+admin.site.register(PlaylistItem)
+admin.site.register(PupilBackpackItem)
+admin.site.register(SharedBackpackItem)
+admin.site.register(Item)
+admin.site.register(GoogleAddress)
+admin.site.register(Address)
