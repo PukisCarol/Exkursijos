@@ -9,6 +9,8 @@ from .views.user.excursion import (
     pupilsListPage
 )
 from .views.user.login import authenticateLoginInfo
+from .views.teacher.collectionRoute import openViewCollectionRoutePage
+from .views.teacher.pupilController import openAdministratePickupAddressesPage, openDeletePickupAddressesPage
 
 urlpatterns = [
     path('', mainPage, name='mainPage'),
@@ -19,4 +21,7 @@ urlpatterns = [
     path('JoinExcursionPage/', openJoinExcursionPage, name='JoinExcursionPage'),
     path('<int:pk>/JoinExcursionPage/', authenticateLoginInfo, name='JoinExcursionPage'),
     path('<int:pk>/trinti/', deleteExcursion, name='deleteExcursion'),
+    path('ViewCollectionRoute/<int:pk>/', openViewCollectionRoutePage, name='ViewCollectionRoute'),
+    path('AdministratePickupAddress/<int:pk>/', openAdministratePickupAddressesPage, name='AdministratePickupAddress'),
+    path('DeletePickupAddresses/<int:pk>/', openDeletePickupAddressesPage, name='DeletePickupAddresses'),
 ]
