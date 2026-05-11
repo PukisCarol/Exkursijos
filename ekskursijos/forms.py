@@ -1,17 +1,19 @@
 from django import forms
-from .models import Ekskursija
+from .models.models import Excursion
 
-class EkskursijaForma(forms.ModelForm):
+
+class ExcursionForm(forms.ModelForm):
     class Meta:
-        model  = Ekskursija
-        fields = ['pavadinimas', 'pradžios_laikas', 'pabaigos_laikas']
+        model = Excursion
+        fields = ['name', 'start_date', 'end_date']
         widgets = {
-            'pradžios_laikas': forms.DateInput(attrs={'type': 'date'}),
-            'pabaigos_laikas': forms.DateInput(attrs={'type': 'date'}),
+            'start_date': forms.DateInput(attrs={'type': 'date'}),
+            'end_date': forms.DateInput(attrs={'type': 'date'}),
         }
 
-class PaskelbtiForma(forms.Form):
-    ekskursijos_data = forms.DateField(
+
+class PublishExcursionForm(forms.Form):
+    excursion_date = forms.DateField(
         widget=forms.DateInput(attrs={'type': 'date'}),
-        label='Ekskursijos data',
+        label='Excursion date',
     )

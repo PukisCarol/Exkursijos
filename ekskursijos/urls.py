@@ -1,11 +1,22 @@
 from django.urls import path
-from . import views
+from .views.user.excursion import (
+    addExcursion,
+    deleteExcursion,
+    getExcursionList,
+    openExcursion,
+    mainPage,
+    openJoinExcursionPage,
+    pupilsListPage
+)
+from .views.user.login import authenticateLoginInfo
 
 urlpatterns = [
-    path('',                      views.getExcursionList, name='getExcursionList'),
-    path('<int:pk>/',             views.openExcursion,    name='openExcursion'),
-    path('prideti/',              views.addExcursion,     name='addExcursion'),
-    path('<int:pk>/redaguoti/',   views.redaguoti,        name='redaguoti'),
-    path('<int:pk>/trinti/',      views.deleteExcursion,  name='deleteExcursion'),
-    path('<int:pk>/prisijungti/', views.prisijungti,      name='prisijungti'),
-]  
+    path('', mainPage, name='mainPage'),
+    path('excursionListPage/', getExcursionList, name='excursionListPage'),
+    path('ExcursionPage/<int:pk>/', openExcursion, name='ExcursionPage'),
+    path('PupilsListPage/<int:pk>/', pupilsListPage, name='PupilsListPage'),
+    path('CreateExcursionPage/', addExcursion, name='CreateExcursionPage'),
+    path('JoinExcursionPage/', openJoinExcursionPage, name='JoinExcursionPage'),
+    path('<int:pk>/JoinExcursionPage/', authenticateLoginInfo, name='JoinExcursionPage'),
+    path('<int:pk>/trinti/', deleteExcursion, name='deleteExcursion'),
+]

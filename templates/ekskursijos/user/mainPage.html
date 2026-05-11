@@ -1,0 +1,7 @@
+{% extends 'ekskursijos/user/basePage.html' %}
+{% block content %}
+<h1>Pagrindinis puslapis</h1>
+<form action="{% url 'excursionListPage' %}" method="get">
+    <button type="submit">Peržiūrėti ekskursijų sąrašą</button>
+</form>
+{% endblock %}

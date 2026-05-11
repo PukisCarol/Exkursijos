@@ -1,0 +1,98 @@
+{% extends 'ekskursijos/user/basePage.html' %}
+{% block title %}{{ ekskursija.name }}{% endblock %}
+{% block content %}
+<h1>{{ ekskursija.name }}</h1>
+
+<div style="background:white; padding:1.5rem; border-radius:10px; max-width:600px;">
+    <p style="margin:.5rem 0;"><strong>Start date:</strong> {{ ekskursija.start_date|date:'Y-m-d' }}</p>
+    <p style="margin:.5rem 0;"><strong>End date:</strong> {{ ekskursija.end_date|date:'Y-m-d' }}</p>
+    <p style="margin:.5rem 0;"><strong>Status:</strong> {{ ekskursija.get_status_display }}</p>
+    {% if ekskursija.excursion_date %}
+    <p style="margin:.5rem 0;"><strong>Excursion date:</strong> {{ ekskursija.excursion_date|date:'Y-m-d' }}</p>
+    {% endif %}
+</div>
+
+ {% if role == 'teacher' %}
+
+    <style>
+        #delete-modal-toggle {
+            display: none;
+        }
+        .delete-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        #delete-modal-toggle:checked ~ .delete-modal {
+            display: flex;
+        }
+        .delete-modal-box {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            width: min(92vw, 420px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, .2);
+            position: relative;
+            z-index: 1001;
+        }
+    </style>
+
+    <h2 style="margin-top:2rem;">Paskelbti ekskursijos datą</h2>
+    <div class="forma-wrap">
+        <form method="post">
+            {% csrf_token %}
+            {% for laukas in forma %}
+            <div class="laukas">
+                <label>{{ laukas.label }}</label>
+                {{ laukas }}
+                {% if laukas.errors %}
+                <p style="color:red; font-size:.85rem;">{{ laukas.errors }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-green">Paskelbti</button>
+        </form>
+    </div>
+
+    <input type="checkbox" id="delete-modal-toggle" />
+
+    <div class="veiksmai" style="margin-top:1.5rem;">
+        <a href="{% url 'PupilsListPage' ekskursija.pk %}" class="btn btn-green">Peržiūrėti užsiregistravusių sąrašą</a>
+        <button type="button" class="btn btn-green">Administruoti daiktų sąrašą</button>
+        <label for="delete-modal-toggle" class="btn btn-red">Trinti</label>
+        <a href="{% url 'excursionListPage' %}" class="btn btn-gray">← Grįžti</a>
+    </div>
+
+    <div class="delete-modal">
+        <label for="delete-modal-toggle" style="position:absolute; inset:0;" aria-label="Uždaryti"></label>
+        <div class="delete-modal-box">
+            <h3 style="margin-top:0;">Trinti ekskursiją</h3>
+            <p style="margin-bottom:1.2rem;">
+                 Ar tikrai nori ištrinti <strong>{{ ekskursija.name }}</strong>? Šio veiksmo negalima atšaukti.
+            </p>
+            <form method="post" action="{% url 'deleteExcursion' ekskursija.pk %}">
+                {% csrf_token %}
+                <div class="veiksmai">
+                    <button type="submit" class="btn btn-red">Taip, trinti</button>
+                    <label for="delete-modal-toggle" class="btn btn-gray">Atšaukti</label>
+                </div>
+            </form>
+        </div>
+    </div>
+
+ {% elif role == 'pupil' %}
+    <div class="veiksmai" style="margin-top:1.5rem;">
+        <button type="button" class="btn btn-green">Valdyti rekomenduojamus daiktus</button>
+        <a href="{% url 'excursionListPage' %}" class="btn btn-gray">← Grįžti</a>
+    </div>
+
+{% else %}
+    <p style="color:#c0392b; margin-top:1rem;">Neturite prieigos peržiūrėti šią ekskursiją.</p>
+    <a href="{% url 'excursionListPage' %}" class="btn btn-gray" style="margin-top:1rem;">← Grįžti</a>
+{% endif %}
+
+{% endblock %}

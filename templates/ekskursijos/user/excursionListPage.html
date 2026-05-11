@@ -1,0 +1,69 @@
+{% extends 'ekskursijos/user/basePage.html' %}
+{% block title %}Ekskursijų sąrašas{% endblock %}
+{% block content %}
+<h1>Ekskursijų sąrašas</h1>
+
+{% if role == 'teacher' %}
+    <form method="post">
+        {% csrf_token %}
+        <div style="margin-bottom:1rem;">
+            <a href="{% url 'CreateExcursionPage' %}" class="btn btn-green">Kurti naują ekskursiją</a>
+            <button type="submit" class="btn btn-red" style="margin-left:.5rem;">Trinti pažymėtas</button>
+        </div>
+{% endif %}
+
+                        {% if role == 'pupil' %}
+<a href="{% url 'JoinExcursionPage' %}" class="btn btn-green" style="margin-bottom:1rem;">Prisijungti prie ekskursijų</a>
+{% endif %}
+
+<table>
+    <thead>
+        <tr>
+            {% if role == 'teacher' %}<th></th>{% endif %}
+            <th>#</th>
+            <th>Pavadinimas</th>
+            <th>Ekskursijos data</th>
+            <th>Pradžios laikas</th>
+            <th>Pabaigos laikas</th>
+            <th>Statusas</th>
+            <th>Veiksmai</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for e in ekskursijos %}
+        <tr>
+                {% if role == 'teacher' %}
+            <td><input type="checkbox" name="trinti_ids" value="{{ e.pk }}"></td>
+            {% endif %}
+            <td>{{ forloop.counter }}</td>
+            <td><a href="{% url 'ExcursionPage' e.pk %}">{{ e.name }}</a></td>
+            <td>{% if e.excursion_date %}{{ e.excursion_date|date:'Y-m-d' }}{% else %}-{% endif %}</td>
+            <td>{{ e.start_date|date:'Y-m-d' }}</td>
+            <td>{{ e.end_date|date:'Y-m-d' }}</td>
+            <td>{{ e.get_status_display }}</td>
+            <td class="veiksmai">
+{% if role == 'teacher' %}
+                {% else %}
+{% if role == 'pupil' %}
+                        {# Removed per-excursion join button as requested #}
+                    {% else %}
+                        <span style="color:#c0392b;">Nėra prieigos</span>
+                    {% endif %}
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="7" style="text-align:center; padding:2rem; color:#888;">
+                Nėra ekskursijų.
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if role == 'teacher' %}
+    </form>
+{% endif %}
+
+{% endblock %}
