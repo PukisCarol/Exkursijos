@@ -5,7 +5,13 @@
 
 <div style="background:white; padding:1.5rem; border-radius:10px; max-width:800px;">
     <h2 style="margin-top:0;">Grojaraštis</h2>
-    <p style="margin:.5rem 0;"><strong>Kūrė:</strong> {{ excursion.teacher.get_full_name|default:excursion.teacher.username }}</p>
+    <p style="margin:.5rem 0;"><strong>Kūrė:</strong> 
+    {% if excursion.teacher %}
+        {{ excursion.teacher.get_full_name|default:excursion.teacher.username }}
+    {% else %}
+        N/A
+    {% endif %}
+    </p>
     <p style="margin:.5rem 0;"><strong>Sukurta:</strong> {{ playlist.creation_date|date:'Y-m-d H:i' }}</p>
     <p style="margin:.5rem 0;"><strong>Dainų skaičius:</strong> {{ songs|length }}</p>
 </div>
@@ -40,6 +46,12 @@
 {% else %}
 <div style="background:white; padding:1.5rem; border-radius:10px; max-width:800px; margin-top:1.5rem;">
     <p>Grojaraštis tuščias.</p>
+</div>
+{% endif %}
+
+{% if role == 'teacher' %}
+<div style="margin-top:1.5rem;">
+    <a href="{% url 'PlaylistItemAddPage' excursion.pk %}" class="btn btn-green">Pridėti dainą</a>
 </div>
 {% endif %}
 
