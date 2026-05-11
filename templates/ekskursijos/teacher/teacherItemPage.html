@@ -1,0 +1,105 @@
+{% extends 'ekskursijos/user/basePage.html' %}
+{% block title %}Daiktų sąrašas{% endblock %}
+{% block content %}
+<h1>Ekskursijos daiktų sąrašas</h1>
+
+<div style="background:white; padding:1.5rem; border-radius:10px; max-width:900px; box-shadow:0 2px 8px rgba(0,0,0,.1);">
+    <p style="margin:0 0 .75rem 0;"><strong>Ekskursija:</strong> {{ excursion.name }}</p>
+
+    {% if items %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Nr.</th>
+                    <th>Daiktas</th>
+                    <th>Svarba</th>
+                    <th>Svoris</th>
+                    <th>Veiksmai</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for shared_item in items %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ shared_item.item.name }}</td>
+                    <td>{{ shared_item.importance }}</td>
+                    <td>{{ shared_item.weight }}</td>
+                    <td style="white-space: nowrap;">
+                        <a href="{% url 'itemSelected' excursion.pk %}?edit={{ shared_item.id }}" class="btn btn-gray" style="padding:.35rem .65rem;">Redaguoti</a>
+                        <form method="post" action="{% url 'deleteItem' excursion.pk %}" style="display:inline; margin-left:.35rem;">
+                            {% csrf_token %}
+                            <input type="hidden" name="item_id" value="{{ shared_item.id }}">
+                            <!-- <button type="submit" class="btn" style="background:#e65252; color:#fff; padding:.35rem .65rem;">Šalinti</button> -->
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+    <div style="margin-top:1rem;">
+        <a href="{% url 'newItemSelected' excursion.pk %}" class="btn btn-gray">Pridėti daiktą</a>
+    </div>
+    {% else %}
+        <p style="margin:1rem 0 1rem 0;">Sąrašas dar nesukurtas</p>
+        <form method="post" action="{% url 'createNewLists' excursion.pk %}" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-green">Kurti sąrašą</button>
+        </form>
+    {% endif %}
+
+
+    <div style="margin-top:2rem; padding-top:1rem; border-top:1px solid #e7e7e7;">
+        <h2>Drabužiai</h2>
+        {% if clothing_items %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nr.</th>
+                        <th>Drabužis</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for clothing in clothing_items %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ clothing.name }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p style="margin:1rem 0;">Nėra susietų drabužių.</p>
+        {% endif %}
+    </div>
+
+    <div id="add-item-form" style="margin-top:1.5rem; padding-top:1rem; border-top:1px solid #e7e7e7;">
+        {% if edit_mode %}
+            <h3 style="margin-top:0;">Redaguoti daiktą</h3>
+            <form method="post" action="{% url 'editItem' excursion.pk %}" style="display:grid; gap:.65rem; max-width:420px;">
+                {% csrf_token %}
+                <input type="hidden" name="item_id" value="{{ edit_item_id }}">
+                {{ form.as_p }}
+                <div style="display:flex; gap:.5rem;">
+                    <button type="submit" class="btn btn-green">Išsaugoti</button>
+                    <a href="{% url 'TeacherItemPage' excursion.pk %}" class="btn btn-gray">Atšaukti</a>
+                </div>
+            </form>
+        {% elif add_mode %}
+            <h3 style="margin-top:0;">Pridėti daiktą</h3>
+            <form method="post" action="{% url 'addItem' excursion.pk %}" style="display:grid; gap:.65rem; max-width:420px;">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <div style="display:flex; gap:.5rem;">
+                    <button type="submit" class="btn btn-green" {% if not form.fields.item.queryset %}disabled{% endif %}>Pridėti</button>
+                    <a href="{% url 'TeacherItemPage' excursion.pk %}" class="btn btn-gray">Atšaukti</a>
+                </div>
+            </form>
+        {% endif %}
+    </div>
+
+    <div class="veiksmai" style="margin-top:1.5rem;">
+        <a href="{% url 'ExcursionPage' excursion.pk %}" class="btn btn-gray">← Grįžti</a>
+    </div>
+</div>
+{% endblock %}
