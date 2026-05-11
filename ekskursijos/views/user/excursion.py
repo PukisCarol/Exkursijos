@@ -184,13 +184,22 @@ def openExcursionPlaylist(request, pk):
     songs_data = []
     for item in playlist_items:
         song = item.song
+        duration_min = song.duration // 60 if song.duration else 0
+        start_seconds = item.start_time if item.start_time is not None else 0
+        hours = start_seconds // 3600
+        minutes = (start_seconds % 3600) // 60
+        start_time_str = f"{hours:02d}:{minutes:02d}"
+        
         songs_data.append({
             'order': item.order,
             'title': song.title,
             'author': song.author,
             'language': song.language,
             'duration': song.duration,
+            'duration_min': duration_min,
             'start_time': item.start_time,
+            'start_time_str': start_time_str,
+            'item_id': item.id,
         })
 
     context = {

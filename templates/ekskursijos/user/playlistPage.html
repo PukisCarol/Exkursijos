@@ -5,8 +5,14 @@
 
 <div style="background:white; padding:1.5rem; border-radius:10px; max-width:800px;">
     <h2 style="margin-top:0;">Grojaraštis</h2>
-    <p style="margin:.5rem 0;"><strong>Kūrė:</strong> {{ excursion.teacher.get_full_name|default:excursion.teacher.username }}</p>
-    <p style="margin:.5rem 0;"><strong>Sukurta:</strong> {{ playlist.creation_date|date:'Y-m-d H:i' }}</p>
+    <p style="margin:.5rem 0;"><strong>Kūrė:</strong> 
+    {% if excursion.teacher %}
+        {{ excursion.teacher.get_full_name|default:excursion.teacher.username }}
+    {% else %}
+        N/A
+    {% endif %}
+    </p>
+    <p style="margin:.5rem 0;"><strong>Sukurta:</strong> {{ playlist.creation_date|date:'Y-m-d' }}</p>
     <p style="margin:.5rem 0;"><strong>Dainų skaičius:</strong> {{ songs|length }}</p>
 </div>
 
@@ -19,7 +25,7 @@
                 <th style="text-align:left; padding:.5rem;">Daina</th>
                 <th style="text-align:left; padding:.5rem;">Atlikėjas</th>
                 <th style="text-align:left; padding:.5rem;">Kalba</th>
-                <th style="text-align:left; padding:.5rem;">Trukmė</th>
+                <th style="text-align:left; padding:.5rem;">Trukmė (min)</th>
                 <th style="text-align:left; padding:.5rem;">Pradžios laikas</th>
             </tr>
         </thead>
@@ -30,8 +36,8 @@
                 <td style="padding:.5rem;">{{ song.title }}</td>
                 <td style="padding:.5rem;">{{ song.author }}</td>
                 <td style="padding:.5rem;">{{ song.language }}</td>
-                <td style="padding:.5rem;">{{ song.duration|default:"-" }}</td>
-                <td style="padding:.5rem;">{{ song.start_time|default:"-" }}</td>
+                <td style="padding:.5rem;">{{ song.duration_min }}</td>
+                <td style="padding:.5rem;">{{ song.start_time_str }}</td>
             </tr>
             {% endfor %}
         </tbody>

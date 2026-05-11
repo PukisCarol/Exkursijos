@@ -225,9 +225,8 @@ class Command(BaseCommand):
             selected_songs = random.sample(songs, k=random.randint(3, 7))
             start_time = 0
             for order, song in enumerate(selected_songs, start=1):
-                start_time += random.randint(180, 300)
                 PlaylistItem.objects.create(playlist=pl, song=song, order=order, start_time=start_time)
-        
+                start_time += song.duration
         # Create pupil backpack items
         for pupil in pupils:
             for exc in random.sample(excursions, k=random.randint(1, 2)):
