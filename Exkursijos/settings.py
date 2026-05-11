@@ -118,6 +118,9 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 MEDIA_URL = '/media/'
+
+GOOGLE_MAPS_API_KEY = 'AIzaSyC8OHHiOik2_VXI5Qege2Kudjju2E5W_SM'
+SCHOOL_ADDRESS = 'Studentų g. 65, Kaunas, Lietuva'
 MEDIA_ROOT = BASE_DIR / 'media'
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'

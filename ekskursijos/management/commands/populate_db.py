@@ -62,11 +62,24 @@ class Command(BaseCommand):
             pupils.append(pupil)
         
         # Create profiles
-        Profile.objects.get_or_create(user=admin_user, defaults={'role': 'administrator', 'home_address': 'Admin St 1'})
-        Profile.objects.get_or_create(user=teacher1, defaults={'role': 'teacher', 'home_address': 'Teacher Ave 5'})
-        Profile.objects.get_or_create(user=teacher2, defaults={'role': 'teacher', 'home_address': 'Teacher Rd 10'})
-        for pupil in pupils:
-            Profile.objects.get_or_create(user=pupil, defaults={'role': 'pupil', 'home_address': f'Pupil St {random.randint(1,100)}'})
+        Profile.objects.get_or_create(user=admin_user, defaults={'role': 'administrator', 'home_address': 'Laisvės al. 1, Kaunas, Lietuva'})
+        Profile.objects.get_or_create(user=teacher1, defaults={'role': 'teacher', 'home_address': 'Gedimino g. 5, Kaunas, Lietuva'})
+        Profile.objects.get_or_create(user=teacher2, defaults={'role': 'teacher', 'home_address': 'Savanorių pr. 10, Kaunas, Lietuva'})
+
+        kaunas_addresses = [
+            'Žemaičių g. 3, Kaunas, Lietuva',
+            'Taikos pr. 28, Kaunas, Lietuva',
+            'Kalniečių g. 41, Kaunas, Lietuva',
+            'Vilijampolės g. 15, Kaunas, Lietuva',
+            'Partizanų g. 60, Kaunas, Lietuva',
+            'Jonavos g. 7, Kaunas, Lietuva',
+            'Draugystės g. 19, Kaunas, Lietuva',
+            'Chemijos g. 5, Kaunas, Lietuva',
+            'Semeliškių g. 12, Kaunas, Lietuva',
+            'Ąžuolų g. 8, Kaunas, Lietuva',
+        ]
+        for i, pupil in enumerate(pupils):
+            Profile.objects.get_or_create(user=pupil, defaults={'role': 'pupil', 'home_address': kaunas_addresses[i]})
         
         # Clear existing data to avoid conflicts
         ExcursionEnrollment.objects.all().delete()

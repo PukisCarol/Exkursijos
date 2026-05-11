@@ -3,6 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from ...models.models import ExcursionEnrollment, Excursion, Profile
 from ..user.excursion import checkRole
+from ..user.excursionEnrollment import ExcursionEnrollmentController
+from .collectionRouteToAPI import CollectionRouteToAPI
+from .excursionController import ExcursionController
 
 
 class PupilController:
@@ -10,6 +13,15 @@ class PupilController:
         return ExcursionEnrollment.objects.filter(
             excursion=excursion, status='participating'
         ).select_related('pupil', 'pupil__profile')
+
+    def openCreateCollectionRoutePage(self, request, pk):
+        excursion_controller = ExcursionController()
+        excursion = excursion_controller.openCreateCollectionRoutePage(pk)
+        enrollments = self.get(excursion)
+        return render(request, 'ekskursijos/teacher/createCollectionRoute.html', {
+            'excursion': excursion,
+            'enrollments': enrollments,
+        })
 
     def openAdministratePickupAddressesPage(self, request, excursion):
         enrollments = self.get(excursion)
@@ -45,6 +57,75 @@ class PupilController:
         messages.info(request, 'Naikinimas atšauktas.')
         return self.openAddressDeletionPage(request, excursion, enrollments)
 
+    def checkIfAllParticipantsHaveAddress(self, excursion):
+        enrollments = self.get(excursion)
+        for enrollment in enrollments:
+            if not enrollment.pupil.profile.home_address:
+                return False
+        return True
+
+    def getCoordinates(self, excursion):
+        api = CollectionRouteToAPI()
+        enrollments = self.get(excursion)
+        coords = []
+        for enrollment in enrollments:
+            address = enrollment.pupil.profile.home_address
+            result = api.getCoordinates(address)
+            if result:
+                coords.append({
+                    'pupil': enrollment.pupil,
+                    'address': address,
+                    'coordinates': result,
+                })
+        return self.saveCoordinates(coords)
+
+    def saveCoordinates(self, coords):
+        return coords
+
+    def createListForCollectionRoute(self, excursion, pupils_with_coords):
+        from .collectionRoute import CollectionRouteController
+        controller = CollectionRouteController()
+        return controller.createListForCollectionRoute(excursion, pupils_with_coords)
+
+
+@login_required
+def openCreateCollectionRoutePage(request, pk):
+    role = checkRole(request.user)
+    if role != 'teacher':
+        return redirect('ViewCollectionRoute', pk=pk)
+
+    if request.method == 'POST':
+        excursion_controller = ExcursionController()
+        excursion = excursion_controller.get(pk)
+
+        enrollment_controller = ExcursionEnrollmentController()
+        enrollments = enrollment_controller.getAllExcursionParticipants(excursion)
+
+        pupil_controller = PupilController()
+
+        all_have_address = pupil_controller.checkIfAllParticipantsHaveAddress(excursion)
+        if not all_have_address:
+            messages.error(
+                request,
+                'Ne visi mokiniai turi nustatytus paėmimo adresus. '
+                'Prašome juos įvesti prieš sudarant maršrutą.'
+            )
+            return render(request, 'ekskursijos/teacher/createCollectionRoute.html', {
+                'excursion': excursion,
+                'enrollments': enrollments,
+                'missing_addresses': True,
+            })
+
+        pupils_with_coords = pupil_controller.getCoordinates(excursion)
+
+        pupil_controller.createListForCollectionRoute(excursion, pupils_with_coords)
+
+        messages.success(request, 'Surinkimo maršrutas sėkmingai sudarytas.')
+        return redirect('ViewCollectionRoute', pk=pk)
+
+    pupil_controller = PupilController()
+    return pupil_controller.openCreateCollectionRoutePage(request, pk)
+
 
 @login_required
 def openAdministratePickupAddressesPage(request, pk):
@@ -79,21 +160,7 @@ def openDeletePickupAddressesPage(request, pk):
         elif action == 'confirm_delete':
             selected_ids = request.POST.getlist('confirmed_ids')
             return pupil_controller.deleteSelectedAddresses(request, excursion, selected_ids)
-
         elif action == 'cancel_delete':
             return pupil_controller.cancelDeletionOfAddresses(request, excursion)
 
     return pupil_controller.openDeletePickupAddressesPage(request, excursion)
-
-
-
-@login_required
-def openAdministratePickupAddressesPage(request, pk):
-    role = checkRole(request.user)
-    if role != 'teacher':
-        return redirect('ViewCollectionRoute', pk=pk)
-
-    excursion = get_object_or_404(Excursion, pk=pk)
-
-    pupil_controller = PupilController()
-    return pupil_controller.openAdministratePickupAddressesPage(request, excursion)

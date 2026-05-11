@@ -20,17 +20,17 @@
         <table>
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>Mokinys</th>
                     <th>Eil. nr.</th>
+                    <th>Mokinys</th>
+                    <th>Namų adresas</th>
                 </tr>
             </thead>
             <tbody>
-                {% for c in collections %}
+                {% for c in collections|dictsort:"sequence_number" %}
                 <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td>{{ c.pupil.get_full_name|default:c.pupil.username }}</td>
                     <td>{{ c.sequence_number }}</td>
+                    <td>{{ c.pupil.get_full_name|default:c.pupil.username }}</td>
+                    <td>{{ c.pupil.profile.home_address|default:'-' }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -74,7 +74,7 @@
 </div>
 
 <div class="veiksmai" style="margin-top:2rem;">
-    <a href="#" class="btn btn-green">Sudaryti vaikų surinkimo maršrutą</a>
+    <a href="{% url 'CreateCollectionRoute' excursion.pk %}" class="btn btn-green">Sudaryti vaikų surinkimo maršrutą</a>
     <a href="{% url 'AdministratePickupAddress' excursion.pk %}" class="btn btn-blue">Administruoti paėmimo vietas</a>
 </div>
 
