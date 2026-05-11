@@ -1,0 +1,41 @@
+{% extends 'ekskursijos/user/basePage.html' %}
+{% block title %}Administruoti paėmimo vietas{% endblock %}
+{% block content %}
+<h1>Administruoti paėmimo vietas — {{ excursion.name }}</h1>
+
+<div style="margin-bottom:1.5rem; display:flex; gap:.5rem; align-items:center;">
+    <a href="{% url 'ViewCollectionRoute' excursion.pk %}" class="btn btn-gray">← Grįžti</a>
+    <a href="{% url 'DeletePickupAddresses' excursion.pk %}" class="btn btn-red">Naikinti paėmimo adresus</a>
+</div>
+
+{% if enrollments %}
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Mokinys</th>
+            <th>Paėmimo adresas</th>
+            <th>Veiksmai</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for enrollment in enrollments %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ enrollment.pupil.get_full_name|default:enrollment.pupil.username }}</td>
+            <td>{{ enrollment.pupil.profile.home_address|default:'—' }}</td>
+            <td>
+                <a href="#" class="btn btn-blue">Redaguoti adresą</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div style="background:white; padding:2rem; border-radius:10px; max-width:700px;
+            box-shadow:0 2px 8px rgba(0,0,0,.1); color:#888; text-align:center;">
+    Nė vienas mokinys dar neprisijungė prie šios ekskursijos.
+</div>
+{% endif %}
+
+{% endblock %}
