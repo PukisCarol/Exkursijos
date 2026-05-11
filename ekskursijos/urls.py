@@ -6,7 +6,8 @@ from .views.user.excursion import (
     openExcursion,
     mainPage,
     openJoinExcursionPage,
-    pupilsListPage
+    pupilsListPage,
+    openExcursionPlaylist,
 )
 from .views.user.login import authenticateLoginInfo
 
@@ -14,6 +15,7 @@ urlpatterns = [
     path('', mainPage, name='mainPage'),
     path('excursionListPage/', getExcursionList, name='excursionListPage'),
     path('ExcursionPage/<int:pk>/', openExcursion, name='ExcursionPage'),
+    path('PlaylistPage/<int:pk>/', openExcursionPlaylist, name='PlaylistPage'),
     path('PupilsListPage/<int:pk>/', pupilsListPage, name='PupilsListPage'),
     path('CreateExcursionPage/', addExcursion, name='CreateExcursionPage'),
     path('JoinExcursionPage/', openJoinExcursionPage, name='JoinExcursionPage'),

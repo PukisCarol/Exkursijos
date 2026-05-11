@@ -62,6 +62,7 @@
 
     <div class="veiksmai" style="margin-top:1.5rem;">
         <a href="{% url 'PupilsListPage' ekskursija.pk %}" class="btn btn-green">Peržiūrėti užsiregistravusių sąrašą</a>
+        <a href="{% url 'PlaylistPage' ekskursija.pk %}" class="btn btn-green">Peržiūrėti grojaraštį</a>
         <button type="button" class="btn btn-green">Administruoti daiktų sąrašą</button>
         <label for="delete-modal-toggle" class="btn btn-red">Trinti</label>
         <a href="{% url 'excursionListPage' %}" class="btn btn-gray">← Grįžti</a>
@@ -84,8 +85,9 @@
         </div>
     </div>
 
- {% elif role == 'pupil' %}
+  {% elif role == 'pupil' %}
     <div class="veiksmai" style="margin-top:1.5rem;">
+        <a href="{% url 'PlaylistPage' ekskursija.pk %}" class="btn btn-green">Peržiūrėti grojaraštį</a>
         <button type="button" class="btn btn-green">Valdyti rekomenduojamus daiktus</button>
         <a href="{% url 'excursionListPage' %}" class="btn btn-gray">← Grįžti</a>
     </div>

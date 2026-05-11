@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from .excursionEnrollment import getAllExcursionParticipants
-from ...models.models import Excursion, Profile, ExcursionEnrollment
+from ...models.models import Excursion, Profile, ExcursionEnrollment, Playlist, PlaylistItem, Song
 from ...forms import ExcursionForm, PublishExcursionForm
 
 
@@ -166,3 +166,38 @@ def openJoinExcursionPage(request):
 
 def mainPage(request):
     return render(request, 'ekskursijos/user/mainPage.html')
+
+
+@login_required
+def openExcursionPlaylist(request, pk):
+    excursion = get_object_or_404(Excursion, pk=pk)
+    role = checkRole(request.user)
+
+    if role not in ['teacher', 'pupil']:
+        messages.error(request, 'You do not have access to this playlist.')
+        return redirect('excursionListPage')
+
+    playlist = get_object_or_404(Playlist, excursion=excursion)
+
+    playlist_items = PlaylistItem.objects.filter(playlist=playlist).select_related('song').order_by('order')
+
+    songs_data = []
+    for item in playlist_items:
+        song = item.song
+        songs_data.append({
+            'order': item.order,
+            'title': song.title,
+            'author': song.author,
+            'language': song.language,
+            'duration': song.duration,
+            'start_time': item.start_time,
+        })
+
+    context = {
+        'excursion': excursion,
+        'playlist': playlist,
+        'songs': songs_data,
+        'role': role,
+    }
+
+    return render(request, 'ekskursijos/user/playlistPage.html', context)

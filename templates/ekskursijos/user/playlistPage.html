@@ -1,0 +1,50 @@
+{% extends 'ekskursijos/user/basePage.html' %}
+{% block title %}{{ excursion.name }} - Grojaraštis{% endblock %}
+{% block content %}
+<h1>{{ excursion.name }} - Grojaraštis</h1>
+
+<div style="background:white; padding:1.5rem; border-radius:10px; max-width:800px;">
+    <h2 style="margin-top:0;">Grojaraštis</h2>
+    <p style="margin:.5rem 0;"><strong>Kūrė:</strong> {{ excursion.teacher.get_full_name|default:excursion.teacher.username }}</p>
+    <p style="margin:.5rem 0;"><strong>Sukurta:</strong> {{ playlist.creation_date|date:'Y-m-d H:i' }}</p>
+    <p style="margin:.5rem 0;"><strong>Dainų skaičius:</strong> {{ songs|length }}</p>
+</div>
+
+{% if songs %}
+<div style="background:white; padding:1.5rem; border-radius:10px; max-width:800px; margin-top:1.5rem;">
+    <table style="width:100%; border-collapse:collapse;">
+        <thead>
+            <tr style="border-bottom:2px solid #eee;">
+                <th style="text-align:left; padding:.5rem;">#</th>
+                <th style="text-align:left; padding:.5rem;">Daina</th>
+                <th style="text-align:left; padding:.5rem;">Atlikėjas</th>
+                <th style="text-align:left; padding:.5rem;">Kalba</th>
+                <th style="text-align:left; padding:.5rem;">Trukmė</th>
+                <th style="text-align:left; padding:.5rem;">Pradžios laikas</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for song in songs %}
+            <tr style="border-bottom:1px solid #eee;">
+                <td style="padding:.5rem;">{{ song.order }}</td>
+                <td style="padding:.5rem;">{{ song.title }}</td>
+                <td style="padding:.5rem;">{{ song.author }}</td>
+                <td style="padding:.5rem;">{{ song.language }}</td>
+                <td style="padding:.5rem;">{{ song.duration|default:"-" }}</td>
+                <td style="padding:.5rem;">{{ song.start_time|default:"-" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div style="background:white; padding:1.5rem; border-radius:10px; max-width:800px; margin-top:1.5rem;">
+    <p>Grojaraštis tuščias.</p>
+</div>
+{% endif %}
+
+<div style="margin-top:1.5rem;">
+    <a href="{% url 'ExcursionPage' excursion.pk %}" class="btn btn-gray">← Grįžti į ekskursiją</a>
+    <a href="{% url 'excursionListPage' %}" class="btn btn-gray">← Grįžti į sąrašą</a>
+</div>
+{% endblock %}
