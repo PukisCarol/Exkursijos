@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Max
+from django.http import JsonResponse
 import json
 from .excursionEnrollment import getAllExcursionParticipants
 from ...models.models import Excursion, Profile, ExcursionEnrollment, Playlist, PlaylistItem, Song
@@ -323,15 +324,134 @@ def deletePlaylistItem(request, pk, item_id):
     playlist_item.delete()
     song.delete()
 
-    remaining_items = PlaylistItem.objects.filter(playlist=playlist).order_by('order')
+    remaining_items = list(PlaylistItem.objects.filter(playlist=playlist).order_by('order'))
 
-    accumulated_time = 0
     for idx, item in enumerate(remaining_items, start=1):
         item.order = idx
-        item.start_time = accumulated_time
-        item.save(update_fields=['order', 'start_time'])
-        accumulated_time += item.song.duration
+
+    PlaylistItem.objects.bulk_update(remaining_items, ['order'])
+
+    recountItemStartTimes(playlist)
 
     messages.success(request, 'Playlist item deleted successfully.')
 
     return redirect('PlaylistPage', pk=pk)
+
+
+@login_required
+def changePlaylistItemPlace(request, pk):
+    if request.method != 'POST':
+        return redirect('PlaylistPage', pk=pk)
+
+    excursion = get_object_or_404(Excursion, pk=pk)
+    role = checkRole(request.user)
+
+    if role != 'teacher':
+        return JsonResponse({'success': False, 'error': 'Only teachers can modify playlist order.'})
+
+    item_id = request.POST.get('item_id')
+    new_order = request.POST.get('new_order')
+
+    if not item_id or not new_order:
+        return JsonResponse({'success': False, 'error': 'Missing item_id or new_order.'})
+
+    try:
+        new_order = int(new_order)
+    except ValueError:
+        return JsonResponse({'success': False, 'error': 'Invalid order number.'})
+
+    playlist = get_object_or_404(Playlist, excursion=excursion)
+
+    try:
+        current_item = PlaylistItem.objects.get(pk=item_id, playlist=playlist)
+    except PlaylistItem.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Playlist item not found.'})
+
+    items = list(PlaylistItem.objects.filter(playlist=playlist).order_by('order'))
+    total_items = len(items)
+
+    if new_order < 1 or new_order > total_items:
+        return JsonResponse({'success': False, 'error': f'Order must be between 1 and {total_items}.'})
+
+    old_order = current_item.order
+
+    if old_order == new_order:
+        return JsonResponse({'success': True, 'message': 'Item already at that position.'})
+
+    for item in items:
+        item.order = -item.order
+
+    PlaylistItem.objects.bulk_update(items, ['order'])
+
+    items = list(PlaylistItem.objects.filter(playlist=playlist).order_by('order'))
+
+    for item in items:
+        abs_order = abs(item.order)
+        if item.id == current_item.id:
+            item.order = new_order
+        elif new_order > old_order:
+            if old_order < abs_order <= new_order:
+                item.order = abs_order - 1
+            else:
+                item.order = abs_order
+        else:
+            if new_order <= abs_order < old_order:
+                item.order = abs_order + 1
+            else:
+                item.order = abs_order
+
+    PlaylistItem.objects.bulk_update(items, ['order'])
+
+    recountItemStartTimes(playlist)
+
+    all_items = PlaylistItem.objects.filter(playlist=playlist).order_by('order')
+    updated_items = []
+    for item in all_items:
+        updated_items.append({
+            'id': item.id,
+            'order': item.order,
+            'start_time': item.start_time,
+            'start_time_str': f"{item.start_time // 3600:02d}:{(item.start_time % 3600) // 60:02d}",
+            'title': item.song.title,
+            'author': item.song.author,
+            'language': item.song.language,
+            'duration_min': item.song.duration // 60 if item.song.duration else 0
+        })
+
+    return JsonResponse({'success': True, 'items': updated_items})
+
+    recountItemStartTimes(playlist)
+
+    all_items = PlaylistItem.objects.filter(playlist=playlist).order_by('order')
+    updated_items = []
+    for item in all_items:
+        updated_items.append({
+            'id': item.id,
+            'order': item.order,
+            'start_time': item.start_time,
+            'start_time_str': f"{item.start_time // 3600:02d}:{(item.start_time % 3600) // 60:02d}",
+            'title': item.song.title,
+            'author': item.song.author,
+            'language': item.song.language,
+            'duration_min': item.song.duration // 60 if item.song.duration else 0
+        })
+
+    return JsonResponse({'success': True, 'items': updated_items})
+
+
+def save1(item, new_order):
+    """Update the order of a specific playlist item."""
+    item.order = new_order
+    item.save(update_fields=['order'])
+
+
+def recountItemStartTimes(playlist):
+    """Recalculate start times for all items in the playlist based on their order."""
+    items = PlaylistItem.objects.filter(playlist=playlist).order_by('order')
+    accumulated_time = 0
+    items_to_update = []
+    for item in items:
+        item.start_time = accumulated_time
+        items_to_update.append(item)
+        accumulated_time += item.song.duration
+    PlaylistItem.objects.bulk_update(items_to_update, ['start_time'])

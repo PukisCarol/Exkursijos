@@ -27,13 +27,13 @@
                 <th style="text-align:left; padding:.5rem;">Kalba</th>
                 <th style="text-align:left; padding:.5rem;">Trukmė (min)</th>
                 <th style="text-align:left; padding:.5rem;">Pradžios laikas</th>
-                {% if role == 'teacher' %}<th style="text-align:left; padding:.5rem;">Veiksmai</th>{% endif %}
+                {% if role == 'teacher' %}<th style="text-align:left; padding:.5rem; width:25%;">Veiksmai</th>{% endif %}
             </tr>
         </thead>
-        <tbody>
+        <tbody id="playlist-tbody">
             {% for song in songs %}
-            <tr style="border-bottom:1px solid #eee;">
-                <td style="padding:.5rem;">{{ song.order }}</td>
+            <tr data-item-id="{{ song.item_id }}" data-order="{{ song.order }}" style="border-bottom:1px solid #eee;" class="playlist-item-row">
+                <td class="order-cell" style="padding:.5rem;">{{ song.order }}</td>
                 <td style="padding:.5rem;">{{ song.title }}</td>
                 <td style="padding:.5rem;">{{ song.author }}</td>
                 <td style="padding:.5rem;">{{ song.language }}</td>
@@ -41,7 +41,15 @@
                 <td style="padding:.5rem;">{{ song.start_time_str }}</td>
                 {% if role == 'teacher' %}
                 <td style="padding:.5rem;">
-                    <form method="post" action="{% url 'deletePlaylistItem' excursion.pk song.item_id %}" style="display:inline;" onsubmit="return confirm('Ar tikrai norite pašalinti šią dainą?');">
+                    <div class="action-buttons" data-item-id="{{ song.item_id }}" data-current-order="{{ song.order }}">
+                        <button type="button" class="btn-arrow" onclick="showOrderInput({{ song.item_id }}, {{ song.order }})" style="padding:.25rem .5rem; font-size:.85rem;">↑↓</button>
+                        <div class="order-input-container" style="display:none;">
+                            <input type="number" min="1" max="{{ songs|length }}" class="order-input" value="{{ song.order }}" style="width:50px; padding:.25rem; font-size:.85rem; margin-right:0.25rem;">
+                            <button type="button" class="btn-check" onclick="confirmOrderChange({{ song.item_id }})" style="padding:.25rem .5rem; font-size:.85rem;">✓</button>
+                            <button type="button" class="btn-cancel" onclick="cancelOrderInput({{ song.item_id }})" style="padding:.25rem .5rem; font-size:.85rem;">✗</button>
+                        </div>
+                    </div>
+                    <form method="post" action="{% url 'deletePlaylistItem' excursion.pk song.item_id %}" style="display:inline; margin-left:0.5rem;" onsubmit="return confirm('Ar tikrai norite pašalinti šią dainą?');">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-red" style="padding:.25rem .5rem; font-size:.85rem;">Pašalinti</button>
                     </form>
@@ -68,4 +76,73 @@
     <a href="{% url 'ExcursionPage' excursion.pk %}" class="btn btn-gray">← Grįžti į ekskursiją</a>
     <a href="{% url 'excursionListPage' %}" class="btn btn-gray">← Grįžti į sąrašą</a>
 </div>
+
+<script>
+function showOrderInput(itemId, currentOrder) {
+    const container = document.querySelector(`[data-item-id="${itemId}"] .order-input-container`);
+    const btn = document.querySelector(`[data-item-id="${itemId}"] .btn-arrow`);
+    
+    btn.style.display = 'none';
+    container.style.display = 'inline-flex';
+    container.querySelector('.order-input').value = currentOrder;
+    container.querySelector('.order-input').focus();
+}
+
+function cancelOrderInput(itemId) {
+    const container = document.querySelector(`[data-item-id="${itemId}"] .order-input-container`);
+    const btn = document.querySelector(`[data-item-id="${itemId}"] .btn-arrow`);
+    
+    container.style.display = 'none';
+    btn.style.display = 'inline-block';
+}
+
+function confirmOrderChange(itemId) {
+    const container = document.querySelector(`[data-item-id="${itemId}"] .order-input-container`);
+    const input = container.querySelector('.order-input');
+    const newOrder = parseInt(input.value, 10);
+    
+    if (!newOrder || newOrder < 1) {
+        alert('Įveskite teisingą eilės numerį (1 ar didesnis).');
+        return;
+    }
+    
+    fetch("{% url 'changePlaylistItemPlace' excursion.pk %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: `item_id=${itemId}&new_order=${newOrder}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Klaida: ' + data.error);
+            cancelOrderInput(itemId);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Įvyko klaida keičiant tvarką.');
+        cancelOrderInput(itemId);
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
 {% endblock %}
