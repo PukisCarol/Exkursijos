@@ -21,6 +21,7 @@
                 <th style="text-align:left; padding:.5rem;">Kalba</th>
                 <th style="text-align:left; padding:.5rem;">Trukmė</th>
                 <th style="text-align:left; padding:.5rem;">Pradžios laikas</th>
+                {% if role == 'teacher' %}<th style="text-align:left; padding:.5rem;">Veiksmai</th>{% endif %}
             </tr>
         </thead>
         <tbody>
@@ -32,6 +33,14 @@
                 <td style="padding:.5rem;">{{ song.language }}</td>
                 <td style="padding:.5rem;">{{ song.duration|default:"-" }}</td>
                 <td style="padding:.5rem;">{{ song.start_time|default:"-" }}</td>
+                {% if role == 'teacher' %}
+                <td style="padding:.5rem;">
+                    <form method="post" action="{% url 'deletePlaylistItem' excursion.pk song.item_id %}" style="display:inline;" onsubmit="return confirm('Ar tikrai norite pašalinti šią dainą?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-red" style="padding:.25rem .5rem; font-size:.85rem;">Pašalinti</button>
+                    </form>
+                </td>
+                {% endif %}
             </tr>
             {% endfor %}
         </tbody>
@@ -40,6 +49,12 @@
 {% else %}
 <div style="background:white; padding:1.5rem; border-radius:10px; max-width:800px; margin-top:1.5rem;">
     <p>Grojaraštis tuščias.</p>
+</div>
+{% endif %}
+
+{% if role == 'teacher' %}
+<div style="margin-top:1.5rem;">
+    <a href="{% url 'PlaylistItemAddPage' excursion.pk %}" class="btn btn-green">Pridėti dainą</a>
 </div>
 {% endif %}
 
