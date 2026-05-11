@@ -3,3 +3,4 @@
 /ekskursijos/views/user/__pycache__
 /ekskursijos/models/__pycache__
 *.pyc
+/ekskursijos/templatetags/__pycache__
