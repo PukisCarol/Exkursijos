@@ -1,0 +1,74 @@
+{% extends 'ekskursijos/user/basePage.html' %}
+{% block title %}{{ excursion.name }} - Pridėti dainą į grojaraštį{% endblock %}
+{% block content %}
+<h1>Pridėti dainą į grojaraštį</h1>
+
+<div style="background:white; padding:1.5rem; border-radius:10px; max-width:800px; margin-bottom:1.5rem;">
+    <h2 style="margin-top:0;">Daina: {{ excursion.name }}</h2>
+    <p><strong>Dainų skaičius:</strong> {{ playlist.items.count }}</p>
+</div>
+
+<div style="background:white; padding:1.5rem; border-radius:10px; max-width:800px; margin-bottom:1.5rem;">
+    <form method="get" action="{% url 'PlaylistItemAddPage' excursion.pk %}">
+        <div style="display:flex; gap:.5rem; align-items:flex-end;">
+            <div style="flex:1;">
+                <label for="q" style="display:block; margin-bottom:.5rem; font-weight:bold;">Ieškoti dainos:</label>
+                <input type="text" id="q" name="q" value="{{ query|default:'' }}" 
+                       placeholder="Įveskite dainos pavadinimą ir atlikėją" 
+                       style="width:100%; padding:.5rem; border:1px solid #ccc; border-radius:5px;">
+            </div>
+            <button type="submit" class="btn btn-green" style="padding:.5rem 1.5rem;">Ieškoti</button>
+        </div>
+    </form>
+</div>
+
+{% if search_results %}
+<div style="background:white; padding:1.5rem; border-radius:10px; max-width:800px;">
+    <h3 style="margin-top:0;">Rezultatai ({{ search_results|length }})</h3>
+    
+    {% if search_results %}
+    <div style="display:flex; flex-direction:column; gap:1rem;">
+        {% for track in search_results %}
+        <div style="border:1px solid #eee; padding:1rem; border-radius:8px; display:flex; align-items:center; gap:1rem;">
+            {% if track.artwork_url_100 %}
+            <img src="{{ track.artwork_url_100 }}" alt="Album art" style="width:60px; height:60px; border-radius:4px; object-fit:cover;">
+            {% else %}
+            <div style="width:60px; height:60px; background:#eee; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:.8rem; color:#999;">N/A</div>
+            {% endif %}
+            
+            <div style="flex:1;">
+                <strong>{{ track.track_name }}</strong><br>
+                <span style="color:#666;">{{ track.artist_name }}</span><br>
+                <small>{{ track.collection_name|default:"Unknown Album" }}</small>
+            </div>
+            
+            <div style="text-align:right;">
+                <div>{{ track.duration_str|default:"0:00" }}</div>
+                {% if track.primary_genre_name %}<small>{{ track.primary_genre_name }}</small>{% endif %}
+            </div>
+            
+            <form method="post" action="{% url 'PlaylistItemAddPage' excursion.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="track_id" value="{{ track.track_id }}">
+                <button type="submit" class="btn btn-green" style="white-space:nowrap;">Pridėti</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>Nerasta jokių rezultatų.</p>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if query and not search_results %}
+<div style="background:white; padding:1.5rem; border-radius:10px; max-width:800px; margin-top:1.5rem;">
+    <p>Nerasta jokių rezultatų už "<strong>{{ query }}</strong>". Bandykite kitą paieškos frazę.</p>
+</div>
+{% endif %}
+
+<div style="margin-top:1.5rem;">
+    <a href="{% url 'PlaylistPage' excursion.pk %}" class="btn btn-gray">← Atgal į grojaraštį</a>
+    <a href="{% url 'ExcursionPage' excursion.pk %}" class="btn btn-gray">← Atgal į ekskursiją</a>
+</div>
+{% endblock %}
