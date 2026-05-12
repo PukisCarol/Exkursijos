@@ -13,7 +13,21 @@ from .views.user.excursion import (
     changePlaylistItemPlace,
     generate_playlist,
 )
+from .views.teacher.teacherItem import (
+    openTeacherItemList,
+    itemSelected,
+    editItem,
+    newItemSelected,
+    addItem,
+    deleteItem,
+    createNewLists,
+)
+from .views.pupil.pupilItem import (
+    openPupilItemList,
+)
 from .views.user.login import authenticateLoginInfo
+from .views.teacher.collectionRoute import openViewCollectionRoutePage
+from .views.teacher.pupilController import openAdministratePickupAddressesPage, openDeletePickupAddressesPage, openCreateCollectionRoutePage
 
 urlpatterns = [
     path('', mainPage, name='mainPage'),
@@ -24,9 +38,21 @@ urlpatterns = [
     path('PlaylistItemAddPage/<int:pk>/', openPlaylistItemAddPage, name='PlaylistItemAddPage'),
     path('PlaylistItem/<int:pk>/<int:item_id>/delete/', deletePlaylistItem, name='deletePlaylistItem'),
     path('PupilsListPage/<int:pk>/', pupilsListPage, name='PupilsListPage'),
+    path('TeacherItemPage/<int:pk>/', openTeacherItemList, name='TeacherItemPage'),
+    path('TeacherItemPage/<int:pk>/itemSelected/', itemSelected, name='itemSelected'),
+    path('TeacherItemPage/<int:pk>/editItem/', editItem, name='editItem'),
+    path('TeacherItemPage/<int:pk>/newItemSelected/', newItemSelected, name='newItemSelected'),
+    path('TeacherItemPage/<int:pk>/addItem/', addItem, name='addItem'),
+    path('TeacherItemPage/<int:pk>/deleteItem/', deleteItem, name='deleteItem'),
+    path('TeacherItemPage/<int:pk>/createNewLists/', createNewLists, name='createNewLists'),
+    path('PupilItemPage/<int:pk>/', openPupilItemList, name='openPupilItemList'),
     path('CreateExcursionPage/', addExcursion, name='CreateExcursionPage'),
     path('JoinExcursionPage/', openJoinExcursionPage, name='JoinExcursionPage'),
     path('<int:pk>/JoinExcursionPage/', authenticateLoginInfo, name='JoinExcursionPage'),
     path('<int:pk>/trinti/', deleteExcursion, name='deleteExcursion'),
     path('PlaylistPage/<int:pk>/generate/', generate_playlist, name='generatePlaylist'),
+    path('ViewCollectionRoute/<int:pk>/', openViewCollectionRoutePage, name='ViewCollectionRoute'),
+    path('AdministratePickupAddress/<int:pk>/', openAdministratePickupAddressesPage, name='AdministratePickupAddress'),
+    path('DeletePickupAddresses/<int:pk>/', openDeletePickupAddressesPage, name='DeletePickupAddresses'),
+    path('CreateCollectionRoute/<int:pk>/', openCreateCollectionRoutePage, name='CreateCollectionRoute'),
 ]

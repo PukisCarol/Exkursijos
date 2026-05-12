@@ -75,8 +75,12 @@ WSGI_APPLICATION = 'Exkursijos.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'ekskursijos_db',
+        'USER': 'user',
+        'PASSWORD': 'ekskursijos',
+        'HOST': 'db',
+        'PORT': '5432',
     }
 }
 
@@ -118,9 +122,6 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 MEDIA_URL = '/media/'
-
-GOOGLE_MAPS_API_KEY = 'AIzaSyC8OHHiOik2_VXI5Qege2Kudjju2E5W_SM'
-SCHOOL_ADDRESS = 'Studentų g. 65, Kaunas, Lietuva'
 MEDIA_ROOT = BASE_DIR / 'media'
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'

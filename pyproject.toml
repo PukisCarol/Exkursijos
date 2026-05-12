@@ -1,0 +1,11 @@
+[project]
+name = "ekskursijos"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "django>=6.0.4",
+    "gunicorn>=26.0.0",
+    "psycopg>=3.3.4",
+]

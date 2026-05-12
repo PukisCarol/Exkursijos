@@ -1,6 +1,5 @@
 /ekskursijos/migrations
-/ekskursijos/__pycache__
-/ekskursijos/views/user/__pycache__
-/ekskursijos/models/__pycache__
+**/__pycache__/
 *.pyc
 /ekskursijos/templatetags/__pycache__
+db.sqlite3

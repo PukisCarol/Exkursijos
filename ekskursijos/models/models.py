@@ -70,6 +70,7 @@ class CollectionRoute(models.Model):
     name = models.CharField(max_length=200)
     start_date = models.DateField()
     end_date = models.DateField()
+    excursion = models.ForeignKey('Excursion', on_delete=models.CASCADE, null=True, blank=True, related_name='collection_routes')
     pupils = models.ManyToManyField(User, through='Collection', related_name='collection_routes')
 
     def __str__(self):

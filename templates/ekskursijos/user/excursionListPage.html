@@ -26,7 +26,6 @@
             <th>Pradžios laikas</th>
             <th>Pabaigos laikas</th>
             <th>Statusas</th>
-            <th>Veiksmai</th>
         </tr>
     </thead>
     <tbody>
@@ -41,16 +40,7 @@
             <td>{{ e.start_date|date:'Y-m-d' }}</td>
             <td>{{ e.end_date|date:'Y-m-d' }}</td>
             <td>{{ e.get_status_display }}</td>
-            <td class="veiksmai">
-{% if role == 'teacher' %}
-                {% else %}
-{% if role == 'pupil' %}
-                        {# Removed per-excursion join button as requested #}
-                    {% else %}
-                        <span style="color:#c0392b;">Nėra prieigos</span>
-                    {% endif %}
-                {% endif %}
-            </td>
+
         </tr>
         {% empty %}
         <tr>
