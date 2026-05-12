@@ -110,18 +110,65 @@ class Command(BaseCommand):
             pt = PlaceType.objects.create(name=pt_name)
             place_types.append(pt)
         
-        # Create genres
+        # Create genres - expanded list to match iTunes API genre names
+        genre_names = [
+            'Rock',
+            'Pop',
+            'Hip-Hop',
+            'Rap',
+            'R&B',
+            'Soul',
+            'Electronic',
+            'Dance',
+            'Classical',
+            'Jazz',
+            'Blues',
+            'Country',
+            'Folk',
+            'Alternative',
+            'Indie',
+            'Metal',
+            'Punk',
+            'Reggae',
+            'Latin',
+            'World',
+            'Soundtrack',
+            'Musical',
+            'Kid',
+            'Gospel',
+            'Christian',
+            'Comedy',
+            'Spoken Word',
+            'Easy Listening',
+            'New Age',
+            'Ambient',
+            'Chillout',
+            'House',
+            'Techno',
+            'Trance',
+            'Dubstep',
+            'Disco',
+            'Funk',
+            'Gospel',
+            'Ska',
+            'Opera',
+        ]
         genres = []
-        for genre_name in ['Rock', 'Pop', 'Classical', 'Jazz', 'Folk']:
+        for genre_name in genre_names:
             g = Genre.objects.create(name=genre_name)
             g.place_types.set(random.sample(place_types, k=random.randint(1, 3)))
             genres.append(g)
         
-        # Create genre prices
-        for g1 in genres:
-            for g2 in genres:
-                if g1 != g2:
-                    GenrePrice.objects.create(first_genre=g1, final_genre=g2, price=round(random.uniform(5, 50), 2))
+        # Create genre prices (sample random pairs to avoid massive table)
+        for _ in range(200):  # create about 200 pricing rules
+            g1 = random.choice(genres)
+            g2 = random.choice(genres)
+            if g1 != g2:
+                GenrePrice.objects.get_or_create(
+                    first_genre=g1,
+                    final_genre=g2,
+                    defaults={'price': round(random.uniform(5, 50), 2)}
+                )
         
         # Create type prices
         for pt1 in place_types:
@@ -181,13 +228,13 @@ class Command(BaseCommand):
             place.place_types.set(random.sample(place_types, k=random.randint(1, 2)))
             places.append(place)
         
-        # Create songs
+        # Create songs - more songs for richer selection
         songs = []
-        for i in range(1, 11):
+        for i in range(1, 51):
             song = Song.objects.create(
                 author=f'Author {i}',
                 title=f'Song {i}',
-                language=random.choice(['English', 'Lithuanian', 'Spanish', 'French']),
+                language=random.choice(['English', 'Lithuanian', 'Spanish', 'French', 'German', 'Italian', 'Portuguese']),
                 duration=random.randint(120, 300)
             )
             song.genres.set(random.sample(genres, k=random.randint(1, 2)))

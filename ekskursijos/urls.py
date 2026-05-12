@@ -11,6 +11,7 @@ from .views.user.excursion import (
     openExcursionPlaylist,
     openPlaylistItemAddPage,
     changePlaylistItemPlace,
+    generate_playlist,
 )
 from .views.teacher.teacherItem import (
     openTeacherItemList,
@@ -49,6 +50,7 @@ urlpatterns = [
     path('JoinExcursionPage/', openJoinExcursionPage, name='JoinExcursionPage'),
     path('<int:pk>/JoinExcursionPage/', authenticateLoginInfo, name='JoinExcursionPage'),
     path('<int:pk>/trinti/', deleteExcursion, name='deleteExcursion'),
+    path('PlaylistPage/<int:pk>/generate/', generate_playlist, name='generatePlaylist'),
     path('ViewCollectionRoute/<int:pk>/', openViewCollectionRoutePage, name='ViewCollectionRoute'),
     path('AdministratePickupAddress/<int:pk>/', openAdministratePickupAddressesPage, name='AdministratePickupAddress'),
     path('DeletePickupAddresses/<int:pk>/', openDeletePickupAddressesPage, name='DeletePickupAddresses'),

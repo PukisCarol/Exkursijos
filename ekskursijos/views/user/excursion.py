@@ -2,13 +2,12 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from django.db.models import Max
 from django.http import JsonResponse
 import json
 from .excursionEnrollment import getAllExcursionParticipants
-from ...models.models import Excursion, Profile, ExcursionEnrollment, Playlist, PlaylistItem, Song
+from ...models.models import Excursion, Profile, ExcursionEnrollment, Playlist
 from ...forms import ExcursionForm, PublishExcursionForm
-from ekskursijos.services.music_api import search_songs, get_track_details
+from .playlist_controller import PlaylistController
 
 
 def checkRole(user):
@@ -182,36 +181,10 @@ def openExcursionPlaylist(request, pk):
         return redirect('excursionListPage')
 
     playlist = get_object_or_404(Playlist, excursion=excursion)
-
-    playlist_items = PlaylistItem.objects.filter(playlist=playlist).select_related('song').order_by('order')
-
-    songs_data = []
-    for item in playlist_items:
-        song = item.song
-        duration_min = song.duration // 60 if song.duration else 0
-        start_seconds = item.start_time if item.start_time is not None else 0
-        hours = start_seconds // 3600
-        minutes = (start_seconds % 3600) // 60
-        start_time_str = f"{hours:02d}:{minutes:02d}"
-        
-        songs_data.append({
-            'order': item.order,
-            'title': song.title,
-            'author': song.author,
-            'language': song.language,
-            'duration': song.duration,
-            'duration_min': duration_min,
-            'start_time': item.start_time,
-            'start_time_str': start_time_str,
-            'item_id': item.id,
-        })
-
-    context = {
-        'excursion': excursion,
-        'playlist': playlist,
-        'songs': songs_data,
-        'role': role,
-    }
+    
+    controller = PlaylistController(playlist)
+    context = controller.open()
+    context['role'] = role
 
     return render(request, 'ekskursijos/user/playlistPage.html', context)
 
@@ -226,16 +199,16 @@ def openPlaylistItemAddPage(request, pk):
         return redirect('ExcursionPage', pk=pk)
 
     playlist = get_object_or_404(Playlist, excursion=excursion)
+    controller = PlaylistController(playlist)
 
     if request.method == 'GET':
         query = request.GET.get('q', '')
         search_results = []
         if query:
             try:
-                raw_results = search_songs(query, limit=10)
-                search_results = raw_results
+                search_results = controller.getBestSongMatches(query)
             except Exception as e:
-                messages.error(request, f'Search failed: {str(e)}')
+                messages.error(request, str(e))
 
         return render(request, 'ekskursijos/user/playlistItemAddPage.html', {
             'excursion': excursion,
@@ -253,54 +226,17 @@ def openPlaylistItemAddPage(request, pk):
             messages.error(request, 'No song selected.')
             return redirect('PlaylistItemAddPage', pk=pk)
 
-        if track_data_str:
-            try:
+        try:
+            if track_data_str:
                 track_data = json.loads(track_data_str)
-            except json.JSONDecodeError:
-                messages.error(request, 'Invalid song data.')
-                return redirect('PlaylistItemAddPage', pk=pk)
-        else:
-            try:
-                track_data = get_track_details(track_id)
-            except Exception as e:
-                messages.error(request, f'Failed to get song details: {str(e)}')
-                return redirect('PlaylistItemAddPage', pk=pk)
-
-        title = track_data.get('track_name', '')[:200]
-        author = track_data.get('artist_name', '')[:200]
-        language = track_data.get('primary_genre_name', '')[:50]
-        duration_ms = track_data.get('duration_ms', 0)
-        duration_sec = duration_ms // 1000 if duration_ms else 0
-
-        song = Song.objects.create(
-            title=title,
-            author=author,
-            language=language,
-            duration=duration_sec
-        )
-
-        max_order_result = PlaylistItem.objects.filter(playlist=playlist).aggregate(
-            max_order=Max('order')
-        )
-        max_order = max_order_result['max_order'] if max_order_result['max_order'] is not None else 0
-        new_order = max_order + 1
-
-        all_items = list(PlaylistItem.objects.filter(playlist=playlist).order_by('order'))
-        accumulated_time = 0
-        for item in all_items:
-            item.start_time = accumulated_time
-            item.save(update_fields=['start_time'])
-            accumulated_time += item.song.duration
-
-        new_start_time = accumulated_time
-        PlaylistItem.objects.create(
-            playlist=playlist,
-            song=song,
-            order=new_order,
-            start_time=new_start_time
-        )
-
-        messages.success(request, f'Song "{title}" added to playlist.')
+            else:
+                track_data = controller.getSongDetails(track_id)
+            
+            song = controller.addSong(track_data)
+            messages.success(request, f'Song "{song.title}" added to playlist.')
+        except Exception as e:
+            messages.error(request, str(e))
+            return redirect('PlaylistItemAddPage', pk=pk)
 
         return redirect('PlaylistPage', pk=pk)
 
@@ -318,22 +254,12 @@ def deletePlaylistItem(request, pk, item_id):
         return redirect('PlaylistPage', pk=pk)
 
     playlist = get_object_or_404(Playlist, excursion=excursion)
-    playlist_item = get_object_or_404(PlaylistItem, pk=item_id, playlist=playlist)
-    song = playlist_item.song
-
-    playlist_item.delete()
-    song.delete()
-
-    remaining_items = list(PlaylistItem.objects.filter(playlist=playlist).order_by('order'))
-
-    for idx, item in enumerate(remaining_items, start=1):
-        item.order = idx
-
-    PlaylistItem.objects.bulk_update(remaining_items, ['order'])
-
-    recountItemStartTimes(playlist)
-
-    messages.success(request, 'Playlist item deleted successfully.')
+    controller = PlaylistController(playlist)
+    
+    try:
+        controller.deletePlaylistItem(item_id)
+    except Exception as e:
+        messages.error(request, str(e))
 
     return redirect('PlaylistPage', pk=pk)
 
@@ -361,97 +287,30 @@ def changePlaylistItemPlace(request, pk):
         return JsonResponse({'success': False, 'error': 'Invalid order number.'})
 
     playlist = get_object_or_404(Playlist, excursion=excursion)
-
+    controller = PlaylistController(playlist)
+    
     try:
-        current_item = PlaylistItem.objects.get(pk=item_id, playlist=playlist)
-    except PlaylistItem.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'Playlist item not found.'})
-
-    items = list(PlaylistItem.objects.filter(playlist=playlist).order_by('order'))
-    total_items = len(items)
-
-    if new_order < 1 or new_order > total_items:
-        return JsonResponse({'success': False, 'error': f'Order must be between 1 and {total_items}.'})
-
-    old_order = current_item.order
-
-    if old_order == new_order:
-        return JsonResponse({'success': True, 'message': 'Item already at that position.'})
-
-    for item in items:
-        item.order = -item.order
-
-    PlaylistItem.objects.bulk_update(items, ['order'])
-
-    items = list(PlaylistItem.objects.filter(playlist=playlist).order_by('order'))
-
-    for item in items:
-        abs_order = abs(item.order)
-        if item.id == current_item.id:
-            item.order = new_order
-        elif new_order > old_order:
-            if old_order < abs_order <= new_order:
-                item.order = abs_order - 1
-            else:
-                item.order = abs_order
-        else:
-            if new_order <= abs_order < old_order:
-                item.order = abs_order + 1
-            else:
-                item.order = abs_order
-
-    PlaylistItem.objects.bulk_update(items, ['order'])
-
-    recountItemStartTimes(playlist)
-
-    all_items = PlaylistItem.objects.filter(playlist=playlist).order_by('order')
-    updated_items = []
-    for item in all_items:
-        updated_items.append({
-            'id': item.id,
-            'order': item.order,
-            'start_time': item.start_time,
-            'start_time_str': f"{item.start_time // 3600:02d}:{(item.start_time % 3600) // 60:02d}",
-            'title': item.song.title,
-            'author': item.song.author,
-            'language': item.song.language,
-            'duration_min': item.song.duration // 60 if item.song.duration else 0
-        })
-
-    return JsonResponse({'success': True, 'items': updated_items})
-
-    recountItemStartTimes(playlist)
-
-    all_items = PlaylistItem.objects.filter(playlist=playlist).order_by('order')
-    updated_items = []
-    for item in all_items:
-        updated_items.append({
-            'id': item.id,
-            'order': item.order,
-            'start_time': item.start_time,
-            'start_time_str': f"{item.start_time // 3600:02d}:{(item.start_time % 3600) // 60:02d}",
-            'title': item.song.title,
-            'author': item.song.author,
-            'language': item.song.language,
-            'duration_min': item.song.duration // 60 if item.song.duration else 0
-        })
-
-    return JsonResponse({'success': True, 'items': updated_items})
+        updated_items = controller.changePlaylistItemPlace(item_id, new_order)
+        return JsonResponse({'success': True, 'items': updated_items})
+    except ValueError as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 
-def save1(item, new_order):
-    """Update the order of a specific playlist item."""
-    item.order = new_order
-    item.save(update_fields=['order'])
-
-
-def recountItemStartTimes(playlist):
-    """Recalculate start times for all items in the playlist based on their order."""
-    items = PlaylistItem.objects.filter(playlist=playlist).order_by('order')
-    accumulated_time = 0
-    items_to_update = []
-    for item in items:
-        item.start_time = accumulated_time
-        items_to_update.append(item)
-        accumulated_time += item.song.duration
-    PlaylistItem.objects.bulk_update(items_to_update, ['start_time'])
+@login_required
+def generate_playlist(request, pk):
+    excursion = get_object_or_404(Excursion, pk=pk)
+    role = checkRole(request.user)
+    if role != 'teacher':
+        messages.error(request, 'Tik mokytojai gali generuoti grojaraščius.')
+        return redirect('ExcursionPage', pk=pk)
+    playlist = get_object_or_404(Playlist, excursion=excursion)
+    if request.method == 'POST':
+        try:
+            controller = PlaylistController(playlist)
+            controller.generate()
+        except Exception as e:
+            messages.error(request, f'Error: {str(e)}')
+        return redirect('PlaylistPage', pk=pk)
+    return redirect('ExcursionPage', pk=pk)

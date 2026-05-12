@@ -41,7 +41,7 @@
                 <td style="padding:.5rem;">{{ song.start_time_str }}</td>
                 {% if role == 'teacher' %}
                 <td style="padding:.5rem;">
-                    <div class="action-buttons" data-item-id="{{ song.item_id }}" data-current-order="{{ song.order }}">
+                    <div class="action-buttons" data-item-id="{{ song.item_id }}" data-current-order="{{ song.order }}" style="display:inline-block; vertical-align:middle;">
                         <button type="button" class="btn-arrow" onclick="showOrderInput({{ song.item_id }}, {{ song.order }})" style="padding:.25rem .5rem; font-size:.85rem;">↑↓</button>
                         <div class="order-input-container" style="display:none;">
                             <input type="number" min="1" max="{{ songs|length }}" class="order-input" value="{{ song.order }}" style="width:50px; padding:.25rem; font-size:.85rem; margin-right:0.25rem;">
@@ -49,7 +49,7 @@
                             <button type="button" class="btn-cancel" onclick="cancelOrderInput({{ song.item_id }})" style="padding:.25rem .5rem; font-size:.85rem;">✗</button>
                         </div>
                     </div>
-                    <form method="post" action="{% url 'deletePlaylistItem' excursion.pk song.item_id %}" style="display:inline; margin-left:0.5rem;" onsubmit="return confirm('Ar tikrai norite pašalinti šią dainą?');">
+                    <form method="post" action="{% url 'deletePlaylistItem' excursion.pk song.item_id %}" style="display:inline-block; vertical-align:middle; margin-left:0.5rem;" onsubmit="return confirm('Ar tikrai norite pašalinti šią dainą?');">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-red" style="padding:.25rem .5rem; font-size:.85rem;">Pašalinti</button>
                     </form>
@@ -68,6 +68,10 @@
 
 {% if role == 'teacher' %}
 <div style="margin-top:1.5rem;">
+    <form method="post" action="{% url 'generatePlaylist' excursion.pk %}" style="display:inline;" onsubmit="return confirm('Ar tikrai norite sugeneruoti naują grojaraštį? Tai ištrins esamas dainas.');">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-blue">Generuoti grojaraštį</button>
+    </form>
     <a href="{% url 'PlaylistItemAddPage' excursion.pk %}" class="btn btn-green">Pridėti dainą</a>
 </div>
 {% endif %}
