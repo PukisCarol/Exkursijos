@@ -25,7 +25,7 @@ from .views.pupil.pupilItem import (
 )
 from .views.user.login import authenticateLoginInfo
 from .views.teacher.collectionRoute import openViewCollectionRoutePage
-from .views.teacher.pupilController import openAdministratePickupAddressesPage, openDeletePickupAddressesPage, openCreateCollectionRoutePage
+from .views.teacher.pupilController import openAdministratePickupAddressesPage, openDeletePickupAddressesPage, openCreateCollectionRoutePage, openPickupAddressPage, openEditPickupAddressPage
 
 urlpatterns = [
     path('', mainPage, name='mainPage'),
@@ -51,4 +51,6 @@ urlpatterns = [
     path('AdministratePickupAddress/<int:pk>/', openAdministratePickupAddressesPage, name='AdministratePickupAddress'),
     path('DeletePickupAddresses/<int:pk>/', openDeletePickupAddressesPage, name='DeletePickupAddresses'),
     path('CreateCollectionRoute/<int:pk>/', openCreateCollectionRoutePage, name='CreateCollectionRoute'),
+    path('PickupAddressPage/<int:pk>/', openPickupAddressPage, name='PickupAddressPage'),
+    path('EditPickupAddress/<int:pk>/<int:pupil_id>/', openEditPickupAddressPage, name='EditPickupAddress'),
 ]

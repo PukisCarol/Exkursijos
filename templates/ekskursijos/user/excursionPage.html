@@ -88,6 +88,7 @@
 
   {% elif role == 'pupil' %}
     <div class="veiksmai" style="margin-top:1.5rem;">
+        <a href="{% url 'PickupAddressPage' ekskursija.pk %}" class="btn btn-green">Redaguoti paėmimo adresą</a>
         <a href="{% url 'PlaylistPage' ekskursija.pk %}" class="btn btn-green">Peržiūrėti grojaraštį</a>
         <a href="{% url 'openPupilItemList' ekskursija.pk %}" class="btn btn-green">Valdyti rekomenduojamus daiktus</a>
         <a href="{% url 'excursionListPage' %}" class="btn btn-gray">← Grįžti</a>
