@@ -68,6 +68,10 @@
 
 {% if role == 'teacher' %}
 <div style="margin-top:1.5rem;">
+    <form method="post" action="{% url 'generatePlaylist' excursion.pk %}" style="display:inline;" onsubmit="return confirm('Ar tikrai norite sugeneruoti naują grojaraštį? Tai ištrins esamas dainas.');">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-blue">Generuoti grojaraštį</button>
+    </form>
     <a href="{% url 'PlaylistItemAddPage' excursion.pk %}" class="btn btn-green">Pridėti dainą</a>
 </div>
 {% endif %}

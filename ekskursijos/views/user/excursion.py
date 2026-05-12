@@ -9,6 +9,7 @@ from .excursionEnrollment import getAllExcursionParticipants
 from ...models.models import Excursion, Profile, ExcursionEnrollment, Playlist, PlaylistItem, Song
 from ...forms import ExcursionForm, PublishExcursionForm
 from ekskursijos.services.music_api import search_songs, get_track_details
+from ekskursijos.services.playlist_generator import PlaylistController
 
 
 def checkRole(user):
@@ -455,3 +456,22 @@ def recountItemStartTimes(playlist):
         items_to_update.append(item)
         accumulated_time += item.song.duration
     PlaylistItem.objects.bulk_update(items_to_update, ['start_time'])
+
+
+@login_required
+def generate_playlist(request, pk):
+    excursion = get_object_or_404(Excursion, pk=pk)
+    role = checkRole(request.user)
+    if role != 'teacher':
+        messages.error(request, 'Only teachers can generate playlists.')
+        return redirect('ExcursionPage', pk=pk)
+    playlist = get_object_or_404(Playlist, excursion=excursion)
+    if request.method == 'POST':
+        try:
+            controller = PlaylistController(playlist)
+            controller.generate()
+            messages.success(request, 'Playlist generated successfully.')
+        except Exception as e:
+            messages.error(request, f'Error generating playlist: {str(e)}')
+        return redirect('PlaylistPage', pk=pk)
+    return redirect('ExcursionPage', pk=pk)

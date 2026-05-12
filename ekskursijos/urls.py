@@ -11,6 +11,7 @@ from .views.user.excursion import (
     openExcursionPlaylist,
     openPlaylistItemAddPage,
     changePlaylistItemPlace,
+    generate_playlist,
 )
 from .views.user.login import authenticateLoginInfo
 
@@ -27,4 +28,5 @@ urlpatterns = [
     path('JoinExcursionPage/', openJoinExcursionPage, name='JoinExcursionPage'),
     path('<int:pk>/JoinExcursionPage/', authenticateLoginInfo, name='JoinExcursionPage'),
     path('<int:pk>/trinti/', deleteExcursion, name='deleteExcursion'),
+    path('PlaylistPage/<int:pk>/generate/', generate_playlist, name='generatePlaylist'),
 ]
