@@ -258,7 +258,6 @@ def deletePlaylistItem(request, pk, item_id):
     
     try:
         controller.deletePlaylistItem(item_id)
-        messages.success(request, 'Playlist item deleted successfully.')
     except Exception as e:
         messages.error(request, str(e))
 
@@ -304,7 +303,7 @@ def generate_playlist(request, pk):
     excursion = get_object_or_404(Excursion, pk=pk)
     role = checkRole(request.user)
     if role != 'teacher':
-        messages.error(request, 'Only teachers can generate playlists.')
+        messages.error(request, 'Tik mokytojai gali generuoti grojaraščius.')
         return redirect('ExcursionPage', pk=pk)
     playlist = get_object_or_404(Playlist, excursion=excursion)
     if request.method == 'POST':
@@ -312,6 +311,6 @@ def generate_playlist(request, pk):
             controller = PlaylistController(playlist)
             controller.generate()
         except Exception as e:
-            messages.error(request, f'Error generating playlist: {str(e)}')
+            messages.error(request, f'Error: {str(e)}')
         return redirect('PlaylistPage', pk=pk)
     return redirect('ExcursionPage', pk=pk)

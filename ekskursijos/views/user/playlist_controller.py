@@ -12,21 +12,14 @@ from ...models.models import (
 
 
 class PlaylistController:
-    """
-    Controller that orchestrates playlist generation exactly as per sequence diagram.
-    """
-
-    PLACE_MISMATCH_PENALTY = 1000.0  # netinkamo žanro bauda, reikia nes gal vieta visai neturi zanru tinkamu
-    AVG_SONG_DURATION = 200  # average song length in seconds (approx 3:20)
+    PLACE_MISMATCH_PENALTY = 1000.0
+    AVG_SONG_DURATION = 200
 
     def __init__(self, playlist):
-        """
-        Initialize with a Playlist instance.
-        """
         self.playlist = playlist
         self.excursion = playlist.excursion
         self.favorite_genre = None
-        self.places = []           
+        self.places = []
         self.place_types = []
         self.place_genres = []
         self.processed_places = set()
@@ -34,14 +27,13 @@ class PlaylistController:
         self.N = 0
         self.unprocessed_places = []
 
-        # SA
         self.T = 1000.0
         self.Tmin = 0.1
         self.cooling_rate = 0.995
         self.max_iter = 1000
         self.iterations_at_min_temp = 50
         self.iteration = 0
-        self.transition_cost = [] 
+        self.transition_cost = []
         self.price_dict = {}
         self.current_solution = []
         self.current_cost = 0.0
@@ -78,7 +70,6 @@ class PlaylistController:
     def setHeavyMetalAsFavourite(self):
         genre = Genre.objects.filter(name__iexact='Heavy Metal').first()
         if not genre:
-            # fallback to first genre
             genre = Genre.objects.first()
         self.favorite_genre = genre
         return self.favorite_genre
@@ -120,10 +111,6 @@ class PlaylistController:
 
     # 22
     def getExcursionStartAndEnd(self):
-        """
-        Returns a tuple (start_seconds, end_seconds) representing the total duration
-        of the excursion based on the sum of place visit durations.
-        """
         progresses = ObjectAddressProgress.objects.filter(list_of_places__excursion=self.excursion)
         total_minutes = sum(p.duration_minutes for p in progresses)
         total_seconds = total_minutes * 60
@@ -139,11 +126,6 @@ class PlaylistController:
 
     # 25
     def getRandomSongs(self, count):
-        """
-        Fetches random songs from the Music API. Attempts to get a diverse pool
-        using favorite genre first, then other genres, then generic queries.
-        Returns list of raw track dicts.
-        """
         seeds = []
         seen = set()
         queries = []
@@ -187,11 +169,6 @@ class PlaylistController:
 
     # 29
     def filterRequiredSongCount(self, raw_songs, count):
-        """
-        Converts raw track data to internal representation with linked Genre.
-        Keeps only songs whose primary genre exists in our Genre DB.
-        Returns exactly 'count' items by random sampling; raises if insufficient.
-        """
         filtered = []
         for track in raw_songs:
             genre_name = track.get('primary_genre_name', '').strip()
@@ -208,11 +185,6 @@ class PlaylistController:
 
     # 30
     def getRelevantSongPrices(self):
-        """
-        Fetches all GenrePrice objects where both first_genre and final_genre
-        belong to the set of genres of the selected songs.
-        Stores in self.relevant_prices and self.price_dict.
-        """
         selected_genres = set(item['genre'] for item in self.songs)
         self.relevant_prices = GenrePrice.objects.filter(
             first_genre__in=selected_genres,
@@ -225,17 +197,12 @@ class PlaylistController:
 
     # 31
     def createRandomSolution(self):
-        """Returns a random permutation of song indices [0..N-1]."""
         sol = list(range(self.N))
         random.shuffle(sol)
         return sol
 
     # 32
     def findSmallestPriceForEachSongCombination(self):
-        """
-        Precomputes a transition cost matrix: cost[i][j] = smallest price from
-        song i's genre to song j's genre based on self.price_dict.
-        """
         n = self.N
         self.transition_cost = [[0] * n for _ in range(n)]
         for i in range(n):
@@ -317,7 +284,7 @@ class PlaylistController:
     def deleteCurrentItems(self):
         PlaylistItem.objects.filter(playlist=self.playlist).delete()
 
-    # 46 ir 48
+    # 46,48
     def bulk_create_songs_and_items(self):
         ordered_data = [self.songs[i] for i in self.best_solution]
         song_objs = []
@@ -349,7 +316,6 @@ class PlaylistController:
 
     # 50
     def recountItemStartTimes(self):
-        """Recalculate start times for all items in the playlist based on their order."""
         items = PlaylistItem.objects.filter(playlist=self.playlist).order_by('order')
         accumulated_time = 0
         items_to_update = []
@@ -364,9 +330,7 @@ class PlaylistController:
         self.playlist.creation_date = timezone.now().date()
         self.playlist.save(update_fields=['creation_date'])
 
-
     def open(self):
-        """Display playlist with all items for rendering."""
         playlist_items = PlaylistItem.objects.filter(playlist=self.playlist).select_related('song').order_by('order')
         
         songs_data = []
@@ -402,18 +366,17 @@ class PlaylistController:
         try:
             return search_songs(query, limit=10)
         except Exception as e:
-            raise Exception(f'Search failed: {str(e)}')
+            raise Exception(f'{str(e)}')
 
     def getSongDetails(self, track_id):
         if not track_id:
-            raise ValueError('No track ID provided')
+            raise ValueError('Neduotas track_id')
         try:
             return get_track_details(track_id)
         except Exception as e:
-            raise Exception(f'Failed to get song details: {str(e)}')
+            raise Exception(f'Negauta dainų informacija: {str(e)}')
 
     def addSong(self, track_data):
-        """Add a single song to the playlist."""
         title = track_data.get('track_name', '')[:200]
         author = track_data.get('artist_name', '')[:200]
         language = track_data.get('primary_genre_name', '')[:50]
@@ -445,7 +408,6 @@ class PlaylistController:
         return song
 
     def deletePlaylistItem(self, item_id):
-        """Remove a playlist item and its associated song."""
         playlist_item = get_object_or_404(PlaylistItem, pk=item_id, playlist=self.playlist)
         song = playlist_item.song
         
@@ -462,18 +424,16 @@ class PlaylistController:
         self.recountItemStartTimes()
 
     def changePlaylistItemPlace(self, item_id, new_order):
-        """Move a playlist item to a new position in the playlist."""
         current_item = PlaylistItem.objects.get(pk=item_id, playlist=self.playlist)
         items = list(PlaylistItem.objects.filter(playlist=self.playlist).order_by('order'))
         total_items = len(items)
         
         if new_order < 1 or new_order > total_items:
-            raise ValueError(f'Order must be between 1 and {total_items}.')
+            raise ValueError(f'Reikšmės turi būti tarp {total_items}.')
         
         old_order = current_item.order
         
         if old_order == new_order:
-            # No change needed, but still return serializable items
             all_items = PlaylistItem.objects.filter(playlist=self.playlist).order_by('order')
             updated_items = []
             for item in all_items:
@@ -489,7 +449,6 @@ class PlaylistController:
                 })
             return updated_items
         
-        # Negate all orders temporarily for safe reordering
         for item in items:
             item.order = -item.order
         
@@ -532,9 +491,9 @@ class PlaylistController:
         
         return updated_items
 
-    # Main generate orchestration
+    # generavimas
     def generate(self):
-        #s 1-9: get data and favorite genre
+        # 1-9
         self.getPlaylistID()
         votes = self.getVotes()
         all_genres = self.getAllGenres()
@@ -547,25 +506,25 @@ class PlaylistController:
         self.getExcursionPlaceTypes()
         self.getAllGenrePrices()
 
-        #s 20-21: loop over places to collect genres
-        self.unprocessed_places = self.places[:]  # copy
+        # 20-21
+        self.unprocessed_places = self.places[:]
         while self.unprocessed_places:
             place = self.unprocessed_places.pop(0)
             genres = self.getPlaceGenres(place)
-            self.place_genres.append(genres)  # maintain order of places
+            self.place_genres.append(genres)
             self.markPlaceProcessed(place)
 
-        #s 22-23: get excursion start and end times (relative)
+        # 22-23
         start_sec, end_sec = self.getExcursionStartAndEnd()
 
-        # 24: required songs count
+        # 24
         self.N = self.findRequiredSongsCount(start_sec, end_sec)
 
-        # 25-28: fetch songs and filter
-        raw_songs = self.getRandomSongs(self.N * 3)  # ask for more to have pool
+        # 25-28
+        raw_songs = self.getRandomSongs(self.N * 3)
         self.songs = self.filterRequiredSongCount(raw_songs, self.N)
 
-        # 30: get relevant genre prices
+        # 30
         self.getRelevantSongPrices()
 
         # 32
@@ -580,7 +539,6 @@ class PlaylistController:
 
         self.setStartingSAParameters()
 
-        # SA loop
         if self.N > 1:
             while self.T > self.Tmin and self.iteration < self.max_iter:
                 neighbor = self.generateNeighbor(self.current_solution)
@@ -597,9 +555,9 @@ class PlaylistController:
                 self.incrementCurrentIterations()
 
         with transaction.atomic():
-            self.deleteCurrentItems()                   
-            self.bulk_create_songs_and_items() 
-            self.recountItemStartTimes()                
-            self.updateCreationDate()                   
+            self.deleteCurrentItems()
+            self.bulk_create_songs_and_items()
+            self.recountItemStartTimes()
+            self.updateCreationDate()
 
         return self.playlist
