@@ -330,7 +330,7 @@ class PlaylistController:
         self.playlist.creation_date = timezone.now().date()
         self.playlist.save(update_fields=['creation_date'])
 
-    def open(self):
+    def get_playlist_display_data(self):
         playlist_items = PlaylistItem.objects.filter(playlist=self.playlist).select_related('song').order_by('order')
         
         songs_data = []
@@ -410,17 +410,12 @@ class PlaylistController:
     def deletePlaylistItem(self, item_id):
         playlist_item = get_object_or_404(PlaylistItem, pk=item_id, playlist=self.playlist)
         song = playlist_item.song
-        
         playlist_item.delete()
         song.delete()
-        
         remaining_items = list(PlaylistItem.objects.filter(playlist=self.playlist).order_by('order'))
-        
         for idx, item in enumerate(remaining_items, start=1):
             item.order = idx
-        
         PlaylistItem.objects.bulk_update(remaining_items, ['order'])
-        
         self.recountItemStartTimes()
 
     def changePlaylistItemPlace(self, item_id, new_order):

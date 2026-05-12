@@ -8,4 +8,6 @@ dependencies = [
     "django>=6.0.4",
     "gunicorn>=26.0.0",
     "psycopg>=3.3.4",
+    "requests>=2.32.0",
+    "googlemaps>=4.10.0",
 ]
