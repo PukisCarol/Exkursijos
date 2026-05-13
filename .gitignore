@@ -1,8 +1,5 @@
-/ekskursijos/migrations
 **/__pycache__/
 *.pyc
 /ekskursijos/templatetags/__pycache__
 db.sqlite3
 .env
-.env.*
-/ekskursijos/migrations
