@@ -44,7 +44,14 @@ def openExcursion(request, pk):
                 e.status = 'published'
                 e.save()
                 messages.success(request, f'Excursion date successfully published: {data.strftime("%Y-%m-%d")}.')
-    return redirect('ExcursionPage', pk=pk)
+                return redirect('ExcursionPage', pk=pk)
+    
+    return render(request, 'ekskursijos/user/excursionPage.html', {
+        'ekskursija': e,
+        'role': role,
+        'dalyviai': dalyviai,
+        'forma': forma,
+    })
 
 
 @login_required
@@ -61,17 +68,13 @@ def openGenreVotingPage(request, pk):
     all_genres = controller.getAllGenres()
     voted_genres = controller.getVotedGenres()
     
-    # Check if pupil has already voted for this playlist (any genre)
-    already_voted = controller.checkIfPupilVotedAlreadyForThePlaylist()
-    
-    # Build list of genre data with vote count and whether current pupil voted
+    # Build list of genre data with vote count
     genres_data = []
     for genre in all_genres:
         pg = next((g for g in voted_genres if g.genre.id == genre.id), None)
         genres_data.append({
             'genre': genre,
             'vote_count': pg.vote_count if pg else 0,
-            'has_voted': already_voted  # if pupil already voted anywhere, all buttons disabled
         })
     
     return render(request, 'ekskursijos/user/GenreVotingPage.html', {

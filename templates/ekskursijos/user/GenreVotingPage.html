@@ -24,11 +24,7 @@
                 <td>{{ item.genre.name }}</td>
                 <td class="vote-count">{{ item.vote_count }}</td>
                 <td>
-                    {% if item.has_voted %}
-                        <button class="btn btn-gray" disabled>Jau balsavote</button>
-                    {% else %}
-                        <button class="btn btn-green vote-btn" data-genre-id="{{ item.genre.id }}">Balsuoti</button>
-                    {% endif %}
+                    <button class="btn btn-green vote-btn" data-genre-id="{{ item.genre.id }}">Balsuoti</button>
                 </td>
             </tr>
             {% endfor %}
@@ -75,23 +71,10 @@ document.querySelectorAll('.vote-btn').forEach(button => {
             if (data.status === 'success') {
                 // Update vote count for the voted genre
                 row.querySelector('.vote-count').textContent = data.vote_count;
-                // Disable all vote buttons (single vote per pupil)
-                document.querySelectorAll('.vote-btn').forEach(btn => {
-                    btn.disabled = true;
-                    btn.textContent = 'Jau balsavote';
-                    btn.classList.remove('btn-green');
-                    btn.classList.add('btn-gray');
-                });
                 // Show success message
                 alert(data.message);
             } else if (data.status === 'already_voted') {
-                // Disable all buttons if already voted
-                document.querySelectorAll('.vote-btn').forEach(btn => {
-                    btn.disabled = true;
-                    btn.textContent = 'Jau balsavote';
-                    btn.classList.remove('btn-green');
-                    btn.classList.add('btn-gray');
-                });
+                // Show popup warning about already voting
                 alert(data.message);
             } else {
                 alert('Klaida: ' + data.message);
