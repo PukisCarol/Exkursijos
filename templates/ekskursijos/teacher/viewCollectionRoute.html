@@ -1,81 +1,84 @@
 {% extends 'ekskursijos/user/basePage.html' %}
 {% block title %}Surinkimo maršrutas{% endblock %}
 {% block content %}
-<h1>Surinkimo maršrutas — {{ excursion.name }}</h1>
+<h1 class="h1">Surinkimo maršrutas — {{ excursion.name }}</h1>
 
-<div style="margin-bottom:1.5rem;">
+<div class="mb-2">
     <a href="{% url 'ExcursionPage' excursion.pk %}" class="btn btn-gray">← Grįžti į ekskursiją</a>
 </div>
 
 {% if collection_routes %}
     {% for route in collection_routes %}
-    <div style="background:white; padding:1.5rem; border-radius:10px; max-width:700px; box-shadow:0 2px 8px rgba(0,0,0,.1); margin-bottom:1.5rem;">
-        <h2 style="color:#2c7a4b; margin-bottom:1rem;">{{ route.name }}</h2>
-        <p style="margin:.4rem 0;"><strong>Pradžios data:</strong> {{ route.start_date|date:'Y-m-d' }}</p>
-        <p style="margin:.4rem 0;"><strong>Pabaigos data:</strong> {{ route.end_date|date:'Y-m-d' }}</p>
+    <div class="card mb-2">
+        <h2 class="text-primary mb-2">{{ route.name }}</h2>
+        <p class="mb-2"><strong>Pradžios data:</strong> {{ route.start_date|date:'Y-m-d' }}</p>
+        <p class="mb-2"><strong>Pabaigos data:</strong> {{ route.end_date|date:'Y-m-d' }}</p>
 
         {% with collections=route.collections.all %}
         {% if collections %}
-        <h3 style="margin-top:1.2rem; margin-bottom:.6rem;">Mokiniai maršrute</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Eil. nr.</th>
-                    <th>Mokinys</th>
-                    <th>Namų adresas</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for c in collections|dictsort:"sequence_number" %}
-                <tr>
-                    <td>{{ c.sequence_number }}</td>
-                    <td>{{ c.pupil.get_full_name|default:c.pupil.username }}</td>
-                    <td>{{ c.pupil.profile.home_address|default:'-' }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <h3 class="mt-2 mb-1">Mokiniai maršrute</h3>
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Eil. nr.</th>
+                        <th>Mokinys</th>
+                        <th>Namų adresas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in collections|dictsort:"sequence_number" %}
+                    <tr>
+                        <td>{{ c.sequence_number }}</td>
+                        <td>{{ c.pupil.get_full_name|default:c.pupil.username }}</td>
+                        <td>{{ c.pupil.profile.home_address|default:'-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
         {% else %}
-        <p style="color:#888; margin-top:1rem;">Maršrute dar nėra mokinių.</p>
+        <p class="text-muted mt-2">Maršrute dar nėra mokinių.</p>
         {% endif %}
         {% endwith %}
     </div>
     {% endfor %}
 {% else %}
-    <div style="background:white; padding:2rem; border-radius:10px; max-width:700px; box-shadow:0 2px 8px rgba(0,0,0,.1); color:#888; text-align:center;">
-        Surinkimo maršrutas dar nesudarytas.
-    </div>
+<div class="card">
+    <p class="text-muted text-center">Surinkimo maršrutas dar nesudarytas.</p>
+</div>
 {% endif %}
 
-<h2 style="margin-top:2rem; margin-bottom:1rem;">Ekskursijoje dalyvaujantys mokiniai</h2>
-<div style="background:white; padding:1.5rem; border-radius:10px; max-width:700px; box-shadow:0 2px 8px rgba(0,0,0,.1);">
-{% if enrollments %}
-    <table>
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Mokinys</th>
-                <th>Namų adresas</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for enrollment in enrollments %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>{{ enrollment.pupil.get_full_name|default:enrollment.pupil.username }}</td>
-                <td>{{ enrollment.pupil.profile.home_address|default:'-' }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-{% else %}
-    <p style="color:#888;">Nė vienas mokinys dar neprisijungė prie šios ekskursijos.</p>
-{% endif %}
+<h2 class="mt-3 mb-2">Ekskursijoje dalyvaujantys mokiniai</h2>
+<div class="card">
+    {% if enrollments %}
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Mokinys</th>
+                    <th>Namų adresas</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for enrollment in enrollments %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ enrollment.pupil.get_full_name|default:enrollment.pupil.username }}</td>
+                    <td>{{ enrollment.pupil.profile.home_address|default:'-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-muted">Nė vienas mokinys dar neprisijungė prie šios ekskursijos.</p>
+    {% endif %}
 </div>
 
-<div class="veiksmai" style="margin-top:2rem;">
+<div class="mt-2">
     <a href="{% url 'CreateCollectionRoute' excursion.pk %}" class="btn btn-green">Sudaryti vaikų surinkimo maršrutą</a>
     <a href="{% url 'AdministratePickupAddress' excursion.pk %}" class="btn btn-blue">Administruoti paėmimo vietas</a>
 </div>
-
 {% endblock %}

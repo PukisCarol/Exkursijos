@@ -1,7 +1,7 @@
 {% extends 'ekskursijos/user/basePage.html' %}
 {% block title %}Sudaryti surinkimo maršrutą{% endblock %}
 {% block content %}
-<h1>Sudaryti vaikų surinkimo maršrutą</h1>
+<h1 class="h1">Sudaryti vaikų surinkimo maršrutą</h1>
 <h2>{{ excursion.name }}</h2>
 
 {% if messages %}
@@ -12,45 +12,47 @@
 </ul>
 {% endif %}
 
-<div class="forma-wrap">
+<div class="card">
     <h3>Ekskursijos dalyviai</h3>
     {% if enrollments %}
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Mokinys</th>
-                <th>Paėmimo adresas</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for enrollment in enrollments %}
-            <tr>
-                <td>{{ enrollment.pupil.get_full_name|default:enrollment.pupil.username }}</td>
-                <td>
-                    {% if enrollment.pupil.profile.home_address %}
-                        {{ enrollment.pupil.profile.home_address }}
-                    {% else %}
-                        <span style="color:red;">Adresas nenurodytas</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Mokinys</th>
+                    <th>Paėmimo adresas</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for enrollment in enrollments %}
+                <tr>
+                    <td>{{ enrollment.pupil.get_full_name|default:enrollment.pupil.username }}</td>
+                    <td>
+                        {% if enrollment.pupil.profile.home_address %}
+                            {{ enrollment.pupil.profile.home_address }}
+                        {% else %}
+                            <span class="text-danger">Adresas nenurodytas</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
     {% else %}
     <p>Nėra registruotų dalyvių.</p>
     {% endif %}
 
     {% if missing_addresses %}
-    <p style="color:red; font-weight:bold;">
+    <p class="text-danger mb-2 font-bold">
         Ne visi mokiniai turi nustatytus paėmimo adresus.
         Prašome juos įvesti prieš sudarant maršrutą.
     </p>
     {% endif %}
 
-    <form method="post" style="margin-top:1.5rem;">
+    <form method="post" class="mt-2">
         {% csrf_token %}
-        <div class="veiksmai">
+        <div class="form-actions">
             <button type="submit" class="btn btn-green">Sudaryti maršrutą</button>
             <a href="{% url 'ViewCollectionRoute' excursion.pk %}" class="btn btn-gray">Atšaukti</a>
         </div>

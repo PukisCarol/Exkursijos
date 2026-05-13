@@ -1,19 +1,19 @@
 {% extends 'ekskursijos/user/basePage.html' %}
+{% load static %}
 {% block title %}Naikinti paėmimo adresus{% endblock %}
 {% block content %}
-<h1>Naikinti paėmimo adresus — {{ excursion.name }}</h1>
+<h1 class="h1">Naikinti paėmimo adresus — {{ excursion.name }}</h1>
 
-<div style="margin-bottom:1.5rem;">
+<div class="mb-2">
     <a href="{% url 'AdministratePickupAddress' excursion.pk %}" class="btn btn-gray">← Grįžti</a>
 </div>
 
 {% if show_confirmation %}
-<div style="background:#fff3cd; border:1px solid #ffc107; border-radius:10px; padding:1.5rem;
-            max-width:700px; margin-bottom:1.5rem;">
-    <h2 style="margin-top:0; color:#856404;">Patvirtinti naikinimą</h2>
-    <p>Ar tikrai norite panaikinti pasirinktų mokinių paėmimo adresus? Šio veiksmo negalima atšaukti.</p>
-    <div class="veiksmai" style="margin-top:1rem;">
-        <form method="post" style="display:inline;">
+<div class="card alert mb-2 bg-warning border-warning">
+    <h3 class="mt-0 text-warning">Patvirtinti naikinimą</h3>
+    <p class="mb-2">Ar tikrai norite panaikinti pasirinktų mokinių paėmimo adresus? Šio veiksmo negalima atšaukti.</p>
+    <div class="flex gap-1">
+        <form method="post" class="d-inline-block">
             {% csrf_token %}
             {% for id in selected_ids %}
             <input type="hidden" name="confirmed_ids" value="{{ id }}">
@@ -21,7 +21,7 @@
             <input type="hidden" name="action" value="confirm_delete">
             <button type="submit" class="btn btn-red">Taip, naikinti</button>
         </form>
-        <form method="post" style="display:inline; margin-left:.5rem;">
+        <form method="post" class="d-inline-block">
             {% csrf_token %}
             <input type="hidden" name="action" value="cancel_delete">
             <button type="submit" class="btn btn-gray">Atšaukti</button>
@@ -30,23 +30,25 @@
 </div>
 
 {% if enrollments %}
-<h3 style="margin-bottom:.6rem;">Pasirinktų mokinių adresai bus panaikinti:</h3>
-<table>
-    <thead>
-        <tr><th>#</th><th>Mokinys</th><th>Adresas</th></tr>
-    </thead>
-    <tbody>
-        {% for enrollment in enrollments %}
-        {% if enrollment.pupil.pk|stringformat:"s" in selected_ids %}
-        <tr style="background:#ffe0e0;">
-            <td>{{ forloop.counter }}</td>
-            <td>{{ enrollment.pupil.get_full_name|default:enrollment.pupil.username }}</td>
-            <td>{{ enrollment.pupil.profile.home_address|default:'—' }}</td>
-        </tr>
-        {% endif %}
-        {% endfor %}
-    </tbody>
-</table>
+<h3 class="mb-1">Pasirinktų mokinių adresai bus panaikinti:</h3>
+<div class="table-wrapper">
+    <table class="table">
+        <thead>
+            <tr><th>#</th><th>Mokinys</th><th>Adresas</th></tr>
+        </thead>
+        <tbody>
+            {% for enrollment in enrollments %}
+            {% if enrollment.pupil.pk|stringformat:"s" in selected_ids %}
+            <tr class="bg-danger-light">
+                <td>{{ forloop.counter }}</td>
+                <td>{{ enrollment.pupil.get_full_name|default:enrollment.pupil.username }}</td>
+                <td>{{ enrollment.pupil.profile.home_address|default:'—' }}</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endif %}
 
 {% else %}
@@ -55,39 +57,39 @@
 <form method="post">
     {% csrf_token %}
     <input type="hidden" name="action" value="delete">
-    <table>
-        <thead>
-            <tr>
-                <th><input type="checkbox" id="select-all"></th>
-                <th>Mokinys</th>
-                <th>Paėmimo adresas</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for enrollment in enrollments %}
-            <tr>
-                <td><input type="checkbox" name="pupil_ids" value="{{ enrollment.pupil.pk }}"
-                    class="pupil-checkbox"></td>
-                <td>{{ enrollment.pupil.get_full_name|default:enrollment.pupil.username }}</td>
-                <td>{{ enrollment.pupil.profile.home_address|default:'—' }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <div style="margin-top:1rem;">
-        <button type="submit" class="btn btn-red">Naikinti pažymėtus adresus</button>
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="select-all"></th>
+                    <th>Mokinys</th>
+                    <th>Paėmimo adresas</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for enrollment in enrollments %}
+                <tr>
+                    <td><input type="checkbox" name="pupil_ids" value="{{ enrollment.pupil.pk }}" class="pupil-checkbox"></td>
+                    <td>{{ enrollment.pupil.get_full_name|default:enrollment.pupil.username }}</td>
+                    <td>{{ enrollment.pupil.profile.home_address|default:'—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-</form>
+    <div class="mt-2">
+        <button type="submit" class="btn btn-red">Naikinti pažymėtus adresus</button>
+      </div>
+  </form>
 
-<script>
-    document.getElementById('select-all').addEventListener('change', function() {
-        document.querySelectorAll('.pupil-checkbox').forEach(cb => cb.checked = this.checked);
-    });
-</script>
+  <script>
+      document.getElementById('select-all').addEventListener('change', function() {
+          document.querySelectorAll('.pupil-checkbox').forEach(cb => cb.checked = this.checked);
+      });
+  </script>
 {% else %}
-<div style="background:white; padding:2rem; border-radius:10px; max-width:700px;
-            box-shadow:0 2px 8px rgba(0,0,0,.1); color:#888; text-align:center;">
-    Nė vienas mokinys dar neprisijungė prie šios ekskursijos.
+<div class="card">
+    <p class="text-muted text-center">Nė vienas mokinys dar neprisijungė prie šios ekskursijos.</p>
 </div>
 {% endif %}
 

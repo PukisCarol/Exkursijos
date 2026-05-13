@@ -1,8 +1,8 @@
 {% extends 'ekskursijos/user/basePage.html' %}
 {% block title %}Užsiregistravusių mokinių sąrašas{% endblock %}
 {% block content %}
-<h1>Užsiregistravusių mokinių sąrašas</h1>
-<ul style="background:white; padding:1.5rem; border-radius:10px; max-width:600px;">
+<h1 class="h1">Užsiregistravusių mokinių sąrašas</h1>
+<ul class="card card-sm">
     {% for pupil in pupils %}
         <li>{{ pupil.pupil.username }}</li>
     {% empty %}
