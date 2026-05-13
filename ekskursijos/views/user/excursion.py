@@ -7,6 +7,7 @@ import json
 from .excursionEnrollment import getAllExcursionParticipants
 from ...models.models import Excursion, Profile, ExcursionEnrollment, Playlist
 from ...forms import ExcursionForm, PublishExcursionForm
+from .voting_controller import VotingController
 from .playlist_controller import PlaylistController
 
 
@@ -43,14 +44,69 @@ def openExcursion(request, pk):
                 e.status = 'published'
                 e.save()
                 messages.success(request, f'Excursion date successfully published: {data.strftime("%Y-%m-%d")}.')
-                return redirect('ExcursionPage', pk=pk)
+    return redirect('ExcursionPage', pk=pk)
 
-    return render(request, 'ekskursijos/user/excursionPage.html', {
-        'ekskursija': e,
+
+@login_required
+def openGenreVotingPage(request, pk):
+    excursion = get_object_or_404(Excursion, pk=pk)
+    role = checkRole(request.user)
+    if role != 'pupil':
+        messages.error(request, 'Only pupils can vote.')
+        return redirect('ExcursionPage', pk=pk)
+    
+    playlist = get_object_or_404(Playlist, excursion=excursion)
+    controller = VotingController(playlist, request.user)
+    
+    all_genres = controller.getAllGenres()
+    voted_genres = controller.getVotedGenres()
+    
+    # Check if pupil has already voted for this playlist (any genre)
+    already_voted = controller.checkIfPupilVotedAlreadyForThePlaylist()
+    
+    # Build list of genre data with vote count and whether current pupil voted
+    genres_data = []
+    for genre in all_genres:
+        pg = next((g for g in voted_genres if g.genre.id == genre.id), None)
+        genres_data.append({
+            'genre': genre,
+            'vote_count': pg.vote_count if pg else 0,
+            'has_voted': already_voted  # if pupil already voted anywhere, all buttons disabled
+        })
+    
+    return render(request, 'ekskursijos/user/GenreVotingPage.html', {
+        'excursion': excursion,
+        'playlist': playlist,
+        'genres_data': genres_data,
         'role': role,
-        'dalyviai': dalyviai,
-        'forma': forma,
     })
+
+
+@login_required
+def vote_for_genre(request, pk):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=400)
+    
+    excursion = get_object_or_404(Excursion, pk=pk)
+    role = checkRole(request.user)
+    if role != 'pupil':
+        return JsonResponse({'status': 'error', 'message': 'Only pupils can vote.'}, status=403)
+    
+    genre_id = request.POST.get('genre_id')
+    if not genre_id:
+        return JsonResponse({'status': 'error', 'message': 'Genre not provided.'}, status=400)
+    
+    try:
+        genre_id = int(genre_id)
+    except ValueError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid genre ID.'}, status=400)
+    
+    playlist = get_object_or_404(Playlist, excursion=excursion)
+    controller = VotingController(playlist, request.user)
+    result = controller.voteForGenre(genre_id)
+    
+    status_code = 200 if result['status'] == 'success' else 400
+    return JsonResponse(result, status=status_code)
 
 
 @login_required

@@ -516,7 +516,7 @@ class PlaylistController:
         self.N = self.findRequiredSongsCount(start_sec, end_sec)
 
         # 25-28
-        raw_songs = self.getRandomSongs(self.N * 3)
+        raw_songs = self.getRandomSongs(self.N * 10)
         self.songs = self.filterRequiredSongCount(raw_songs, self.N)
 
         # 30
