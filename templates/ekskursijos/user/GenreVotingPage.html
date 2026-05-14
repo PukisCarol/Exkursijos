@@ -1,0 +1,87 @@
+{% extends 'ekskursijos/user/basePage.html' %}
+{% load static %}
+{% block title %}{{ excursion.name }} - Žanrų balsavimas{% endblock %}
+{% block content %}
+<h1 class="heading-primary">{{ excursion.name }} - Žanrų balsavimas</h1>
+
+<div class="card">
+    <p class="mb-2"><strong>Grojaraštis:</strong> {{ playlist.excursion.name }}</p>
+    <p class="mb-2"><strong>Balsavimas už pageidaujamus muzikos žanrus.</strong></p>
+</div>
+
+<div class="card card--full-width mt-2">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Žanras</th>
+                <th>Balsų skaičius</th>
+                <th>Balsuoti</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in genres_data %}
+            <tr data-genre-id="{{ item.genre.id }}">
+                <td>{{ item.genre.name }}</td>
+                <td class="vote-count">{{ item.vote_count }}</td>
+                <td>
+                    <button class="btn btn-green vote-btn" data-genre-id="{{ item.genre.id }}">Balsuoti</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-2">
+    <a href="{% url 'ExcursionPage' excursion.pk %}" class="btn btn-gray">← Grįžti į ekskursiją</a>
+    <a href="{% url 'excursionListPage' %}" class="btn btn-gray">← Grįžti į sąrašą</a>
+</div>
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+document.querySelectorAll('.vote-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const genreId = this.dataset.genreId;
+        const row = this.closest('tr');
+        
+        fetch("{% url 'vote_for_genre' excursion.pk %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `genre_id=${genreId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                row.querySelector('.vote-count').textContent = data.vote_count;
+                alert(data.message);
+            } else if (data.status === 'already_voted') {
+                alert(data.message);
+            } else {
+                alert('Klaida: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Įvyko klaida balsuojant.');
+        });
+    });
+});
+</script>
+{% endblock %}

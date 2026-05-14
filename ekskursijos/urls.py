@@ -12,6 +12,8 @@ from .views.user.excursion import (
     openPlaylistItemAddPage,
     changePlaylistItemPlace,
     generate_playlist,
+    openGenreVotingPage,
+    vote_for_genre,
 )
 from .views.teacher.teacherItem import (
     openTeacherItemList,
@@ -33,6 +35,8 @@ urlpatterns = [
     path('', mainPage, name='mainPage'),
     path('excursionListPage/', getExcursionList, name='excursionListPage'),
     path('ExcursionPage/<int:pk>/', openExcursion, name='ExcursionPage'),
+    path('ExcursionPage/<int:pk>/genreVoting/', openGenreVotingPage, name='genreVotingPage'),
+    path('ExcursionPage/<int:pk>/genreVoting/vote/', vote_for_genre, name='vote_for_genre'),
     path('PlaylistPage/<int:pk>/', openExcursionPlaylist, name='PlaylistPage'),
     path('PlaylistPage/<int:pk>/changePlace/', changePlaylistItemPlace, name='changePlaylistItemPlace'),
     path('PlaylistItemAddPage/<int:pk>/', openPlaylistItemAddPage, name='PlaylistItemAddPage'),

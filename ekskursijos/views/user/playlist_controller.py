@@ -46,13 +46,7 @@ class PlaylistController:
 
     # 2
 
-    # 3
-    def getVotes(self):
-        return list(PlaylistGenre.objects.filter(playlist=self.playlist).select_related('genre'))
 
-    # 4
-    def getAllGenres(self):
-        return list(Genre.objects.all())
 
     # 5
     def checkGenreVotes(self, votes):
@@ -491,7 +485,7 @@ class PlaylistController:
         # 1-9
         self.getPlaylistID()
         votes = self.getVotes()
-        all_genres = self.getAllGenres()
+        all_genres = list(Genre.objects.all())
         if self.checkGenreVotes(votes):
             self.setMostVotedAsFavourite(votes)
         else:
@@ -516,7 +510,7 @@ class PlaylistController:
         self.N = self.findRequiredSongsCount(start_sec, end_sec)
 
         # 25-28
-        raw_songs = self.getRandomSongs(self.N * 3)
+        raw_songs = self.getRandomSongs(self.N * 10)
         self.songs = self.filterRequiredSongCount(raw_songs, self.N)
 
         # 30
