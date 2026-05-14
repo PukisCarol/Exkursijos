@@ -16,7 +16,7 @@ from .views.user.excursion import (
     vote_for_genre,
 )
 from .views.teacher.teacherItem import (
-    openTeacherItemList,
+    openTeacherItemLists,
     itemSelected,
     editItem,
     newItemSelected,
@@ -42,7 +42,7 @@ urlpatterns = [
     path('PlaylistItemAddPage/<int:pk>/', openPlaylistItemAddPage, name='PlaylistItemAddPage'),
     path('PlaylistItem/<int:pk>/<int:item_id>/delete/', deletePlaylistItem, name='deletePlaylistItem'),
     path('PupilsListPage/<int:pk>/', pupilsListPage, name='PupilsListPage'),
-    path('TeacherItemPage/<int:pk>/', openTeacherItemList, name='TeacherItemPage'),
+    path('TeacherItemPage/<int:pk>/', openTeacherItemLists, name='TeacherItemPage'),
     path('TeacherItemPage/<int:pk>/itemSelected/', itemSelected, name='itemSelected'),
     path('TeacherItemPage/<int:pk>/editItem/', editItem, name='editItem'),
     path('TeacherItemPage/<int:pk>/newItemSelected/', newItemSelected, name='newItemSelected'),
