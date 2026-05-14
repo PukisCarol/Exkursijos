@@ -51,7 +51,7 @@ def itemSelected(request, pk):
     edit_item_id = request.GET.get('edit')
 
     if not edit_item_id:
-        return redirect('TeacherItemPage', pk=pk)
+        return redirect('openTeacherItemLists', pk=pk)
 
     edit_item = get_object_or_404(SharedBackpackItem, id=edit_item_id, excursion=excursion)
     edit_form = SharedBackpackItemForm(instance=edit_item, excursion=excursion)
@@ -84,7 +84,7 @@ def editItem(request, pk):
     item_id = request.POST.get('item_id')
 
     if not item_id:
-        return redirect('TeacherItemPage', pk=pk)
+        return redirect('openTeacherItemLists', pk=pk)
 
     edit_item = get_object_or_404(SharedBackpackItem, id=item_id, excursion=excursion)
     edit_form = SharedBackpackItemForm(request.POST, instance=edit_item, excursion=excursion)
@@ -92,7 +92,7 @@ def editItem(request, pk):
     if edit_form.is_valid():
         edit_form.save()
         messages.success(request, 'Item updated successfully.')
-        return redirect('TeacherItemPage', pk=pk)
+        return redirect('openTeacherItemLists', pk=pk)
 
     items = SharedBackpackItem.objects.filter(
         excursion=excursion
@@ -153,9 +153,8 @@ def addItem(request, pk):
         new_item.excursion = excursion
         new_item.save()
         messages.success(request, 'Item added to list.')
-        return redirect('TeacherItemPage', pk=pk)
+        return redirect('openTeacherItemLists', pk=pk)
 
-    # Re-show form with errors
     items = SharedBackpackItem.objects.filter(
         excursion=excursion
     ).select_related('item').order_by('item__name')
@@ -187,7 +186,7 @@ def deleteItem(request, pk):
         SharedBackpackItem.objects.filter(id=item_id, excursion=excursion).delete()
         messages.success(request, 'Item removed from list.')
 
-    return redirect('TeacherItemPage', pk=pk)
+    return redirect('openTeacherItemLists', pk=pk)
 
 
 @login_required
@@ -227,4 +226,4 @@ def createNewLists(request, pk):
     else:
         messages.warning(request, 'No existing items or clothing were found to link.')
 
-    return redirect('TeacherItemPage', pk=pk)
+    return redirect('openTeacherItemLists', pk=pk)
