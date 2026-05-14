@@ -69,12 +69,9 @@ document.querySelectorAll('.vote-btn').forEach(button => {
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                // Update vote count for the voted genre
                 row.querySelector('.vote-count').textContent = data.vote_count;
-                // Show success message
                 alert(data.message);
             } else if (data.status === 'already_voted') {
-                // Show popup warning about already voting
                 alert(data.message);
             } else {
                 alert('Klaida: ' + data.message);

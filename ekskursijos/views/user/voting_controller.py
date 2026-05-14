@@ -12,9 +12,6 @@ class VotingController:
     def getPlaylistID(self):
         return self.playlist.id
 
-    # 5-6
-    def getAllGenres(self):
-        return list(Genre.objects.all())
 
     # 7-8
     def getVotedGenres(self):

@@ -65,7 +65,7 @@ def openGenreVotingPage(request, pk):
     playlist = get_object_or_404(Playlist, excursion=excursion)
     controller = VotingController(playlist, request.user)
     
-    all_genres = controller.getAllGenres()
+    all_genres = list(Genre.objects.all())
     voted_genres = controller.getVotedGenres()
     
     # Build list of genre data with vote count
