@@ -1,0 +1,42 @@
+{% extends 'ekskursijos/user/basePage.html' %}
+{% block title %}Paėmimo adresas{% endblock %}
+{% block content %}
+<h1>Paėmimo adresas</h1>
+
+<div style="background:white; padding:1.5rem; border-radius:10px; max-width:500px;">
+    <p><strong>Dabartinis adresas:</strong>
+        {% if pupil_profile.home_address %}
+            {{ pupil_profile.home_address }}
+        {% else %}
+            <em>Nenustatytas</em>
+        {% endif %}
+    </p>
+</div>
+
+{% if success %}
+    <div class="alert alert-success" style="max-width:500px; margin-top:1rem;">
+        Adresas sėkmingai atnaujintas.
+    </div>
+{% endif %}
+
+{% if error %}
+    <div class="alert alert-error" style="max-width:500px; margin-top:1rem;">
+        {{ error }}
+    </div>
+{% endif %}
+
+<div class="forma-wrap" style="max-width:500px;">
+    <form method="post">
+        {% csrf_token %}
+        <div class="laukas">
+            <label>Naujas paėmimo adresas</label>
+            <input type="text" name="home_address" placeholder="Pvz.: Laisvės al. 82, Kaunas, Lietuva" style="width:100%;" />
+        </div>
+        <button type="submit" class="btn btn-green">Išsaugoti</button>
+    </form>
+</div>
+
+<div class="veiksmai" style="margin-top:1.5rem;">
+    <a href="{% url 'ExcursionPage' excursion.pk %}" class="btn btn-gray">← Grįžti</a>
+</div>
+{% endblock %}

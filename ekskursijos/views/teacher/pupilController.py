@@ -87,6 +87,90 @@ class PupilController:
         controller = CollectionRouteController()
         return controller.createListForCollectionRoute(excursion, pupils_with_coords)
 
+    def openPickupAddressPage(self, request, pk):
+        excursion_controller = ExcursionController()
+        excursion = excursion_controller.get(pk)
+        pupil_profile = Profile.objects.get(user=request.user)
+        return render(request, 'ekskursijos/user/pickupAddressPage.html', {
+            'excursion': excursion,
+            'pupil_profile': pupil_profile,
+        })
+
+    def isAddressValid(self, address):
+        return bool(address and address.strip())
+
+    def handleNewAddress(self, request, pk):
+        excursion_controller = ExcursionController()
+        excursion = excursion_controller.get(pk)
+        new_address = request.POST.get('home_address', '').strip()
+        pupil_profile = Profile.objects.get(user=request.user)
+        if self.isAddressValid(new_address):
+            pupil_profile.home_address = new_address
+            pupil_profile.save()
+            return render(request, 'ekskursijos/user/pickupAddressPage.html', {
+                'excursion': excursion,
+                'pupil_profile': pupil_profile,
+                'success': True,
+            })
+        else:
+            return render(request, 'ekskursijos/user/pickupAddressPage.html', {
+                'excursion': excursion,
+                'pupil_profile': pupil_profile,
+                'error': 'Adresas yra neteisingas.',
+            })
+
+
+    def openEditPickupAddressPage(self, request, excursion, pupil_profile):
+        return render(request, 'ekskursijos/teacher/editPickupAddress.html', {
+            'excursion': excursion,
+            'pupil_profile': pupil_profile,
+        })
+
+    def handleInvalidAddress(self, request, excursion, pupil_profile):
+        return render(request, 'ekskursijos/teacher/editPickupAddress.html', {
+            'excursion': excursion,
+            'pupil_profile': pupil_profile,
+            'error': 'Adresas yra neteisingas.',
+        })
+
+
+@login_required
+def openEditPickupAddressPage(request, pk, pupil_id):
+    role = checkRole(request.user)
+    if role != 'teacher':
+        return redirect('AdministratePickupAddress', pk=pk)
+
+    excursion = get_object_or_404(Excursion, pk=pk)
+    pupil_profile = get_object_or_404(Profile, user__id=pupil_id)
+    controller = PupilController()
+
+    if request.method == 'POST':
+        new_address = request.POST.get('home_address', '').strip()
+        if controller.isAddressValid(new_address):
+            Profile.objects.filter(user__id=pupil_id).update(home_address=new_address)
+            pupil_profile.refresh_from_db()
+            return render(request, 'ekskursijos/teacher/editPickupAddress.html', {
+                'excursion': excursion,
+                'pupil_profile': pupil_profile,
+                'success': True,
+            })
+        else:
+            return controller.handleInvalidAddress(request, excursion, pupil_profile)
+
+    return controller.openEditPickupAddressPage(request, excursion, pupil_profile)
+
+
+@login_required
+def openPickupAddressPage(request, pk):
+    role = checkRole(request.user)
+    if role != 'pupil':
+        return redirect('ExcursionPage', pk=pk)
+
+    controller = PupilController()
+    if request.method == 'POST':
+        return controller.handleNewAddress(request, pk)
+    return controller.openPickupAddressPage(request, pk)
+
 
 @login_required
 def openCreateCollectionRoutePage(request, pk):

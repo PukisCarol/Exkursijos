@@ -79,7 +79,9 @@ class Command(BaseCommand):
             'Ąžuolų g. 8, Kaunas, Lietuva',
         ]
         for i, pupil in enumerate(pupils):
-            Profile.objects.get_or_create(user=pupil, defaults={'role': 'pupil', 'home_address': kaunas_addresses[i]})
+            profile, _ = Profile.objects.get_or_create(user=pupil, defaults={'role': 'pupil', 'home_address': kaunas_addresses[i]})
+            profile.home_address = kaunas_addresses[i]
+            profile.save()
         
         # Clear existing data to avoid conflicts
         ExcursionEnrollment.objects.all().delete()
@@ -204,12 +206,13 @@ class Command(BaseCommand):
         
         # Create excursion enrollments
         for pupil in pupils:
-            for exc in random.sample(excursions, k=random.randint(1, 3)):
-                ExcursionEnrollment.objects.create(
-                    pupil=pupil,
-                    excursion=exc,
-                    status=random.choice(['participating', 'not_participating', 'not_chosen'])
-                )
+            for exc in excursions:
+                if random.random() < 0.8:
+                    ExcursionEnrollment.objects.create(
+                        pupil=pupil,
+                        excursion=exc,
+                        status='participating'
+                    )
         
         # Create items
         items = []
