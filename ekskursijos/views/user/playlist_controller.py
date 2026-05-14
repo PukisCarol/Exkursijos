@@ -46,13 +46,7 @@ class PlaylistController:
 
     # 2
 
-    # 3
-    def getVotes(self):
-        return list(PlaylistGenre.objects.filter(playlist=self.playlist).select_related('genre'))
 
-    # 4
-    def getAllGenres(self):
-        return list(Genre.objects.all())
 
     # 5
     def checkGenreVotes(self, votes):
@@ -330,7 +324,7 @@ class PlaylistController:
         self.playlist.creation_date = timezone.now().date()
         self.playlist.save(update_fields=['creation_date'])
 
-    def open(self):
+    def get_playlist_display_data(self):
         playlist_items = PlaylistItem.objects.filter(playlist=self.playlist).select_related('song').order_by('order')
         
         songs_data = []
@@ -410,17 +404,12 @@ class PlaylistController:
     def deletePlaylistItem(self, item_id):
         playlist_item = get_object_or_404(PlaylistItem, pk=item_id, playlist=self.playlist)
         song = playlist_item.song
-        
         playlist_item.delete()
         song.delete()
-        
         remaining_items = list(PlaylistItem.objects.filter(playlist=self.playlist).order_by('order'))
-        
         for idx, item in enumerate(remaining_items, start=1):
             item.order = idx
-        
         PlaylistItem.objects.bulk_update(remaining_items, ['order'])
-        
         self.recountItemStartTimes()
 
     def changePlaylistItemPlace(self, item_id, new_order):
@@ -496,7 +485,7 @@ class PlaylistController:
         # 1-9
         self.getPlaylistID()
         votes = self.getVotes()
-        all_genres = self.getAllGenres()
+        all_genres = list(Genre.objects.all())
         if self.checkGenreVotes(votes):
             self.setMostVotedAsFavourite(votes)
         else:
@@ -521,7 +510,7 @@ class PlaylistController:
         self.N = self.findRequiredSongsCount(start_sec, end_sec)
 
         # 25-28
-        raw_songs = self.getRandomSongs(self.N * 3)
+        raw_songs = self.getRandomSongs(self.N * 10)
         self.songs = self.filterRequiredSongCount(raw_songs, self.N)
 
         # 30

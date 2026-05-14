@@ -15,7 +15,7 @@ def checkRole(user):
 
 
 @login_required
-def openTeacherItemList(request, pk):
+def openTeacherItemLists(request, pk):
     """Open the teacher item list page for an excursion."""
     role = checkRole(request.user)
     if role != 'teacher':
@@ -94,7 +94,6 @@ def editItem(request, pk):
         messages.success(request, 'Item updated successfully.')
         return redirect('TeacherItemPage', pk=pk)
 
-    # Re-show form with errors
     items = SharedBackpackItem.objects.filter(
         excursion=excursion
     ).select_related('item').order_by('item__name')

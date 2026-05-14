@@ -1,59 +1,60 @@
 {% extends 'ekskursijos/user/basePage.html' %}
+{% load static %}
 {% block title %}Ekskursijų sąrašas{% endblock %}
 {% block content %}
-<h1>Ekskursijų sąrašas</h1>
+<h1 class="h1">Ekskursijų sąrašas</h1>
 
 {% if role == 'teacher' %}
     <form method="post">
         {% csrf_token %}
-        <div style="margin-bottom:1rem;">
+        <div class="mb-2">
             <a href="{% url 'CreateExcursionPage' %}" class="btn btn-green">Kurti naują ekskursiją</a>
-            <button type="submit" class="btn btn-red" style="margin-left:.5rem;">Trinti pažymėtas</button>
+            <button type="submit" class="btn btn-red ml-1">Trinti pažymėtas</button>
         </div>
-{% endif %}
+    {% endif %}
 
-                        {% if role == 'pupil' %}
-<a href="{% url 'JoinExcursionPage' %}" class="btn btn-green" style="margin-bottom:1rem;">Prisijungti prie ekskursijų</a>
-{% endif %}
+    {% if role == 'pupil' %}
+    <a href="{% url 'JoinExcursionPage' %}" class="btn btn-green mb-2">Prisijungti prie ekskursijų</a>
+    {% endif %}
 
-<table>
-    <thead>
-        <tr>
-            {% if role == 'teacher' %}<th></th>{% endif %}
-            <th>#</th>
-            <th>Pavadinimas</th>
-            <th>Ekskursijos data</th>
-            <th>Pradžios laikas</th>
-            <th>Pabaigos laikas</th>
-            <th>Statusas</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for e in ekskursijos %}
-        <tr>
-                {% if role == 'teacher' %}
-            <td><input type="checkbox" name="trinti_ids" value="{{ e.pk }}"></td>
-            {% endif %}
-            <td>{{ forloop.counter }}</td>
-            <td><a href="{% url 'ExcursionPage' e.pk %}">{{ e.name }}</a></td>
-            <td>{% if e.excursion_date %}{{ e.excursion_date|date:'Y-m-d' }}{% else %}-{% endif %}</td>
-            <td>{{ e.start_date|date:'Y-m-d' }}</td>
-            <td>{{ e.end_date|date:'Y-m-d' }}</td>
-            <td>{{ e.get_status_display }}</td>
-
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="7" style="text-align:center; padding:2rem; color:#888;">
-                Nėra ekskursijų.
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    {% if role == 'teacher' %}<th><input type="checkbox" id="select-all-excursions"></th>{% endif %}
+                    <th>#</th>
+                    <th>Pavadinimas</th>
+                    <th>Ekskursijos data</th>
+                    <th>Pradžios laikas</th>
+                    <th>Pabaigos laikas</th>
+                    <th>Statusas</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in ekskursijos %}
+                <tr>
+                    {% if role == 'teacher' %}
+                    <td><input type="checkbox" name="trinti_ids" value="{{ e.pk }}" class="excursion-checkbox"></td>
+                    {% endif %}
+                    <td>{{ forloop.counter }}</td>
+                    <td><a href="{% url 'ExcursionPage' e.pk %}">{{ e.name }}</a></td>
+                    <td>{% if e.excursion_date %}{{ e.excursion_date|date:'Y-m-d' }}{% else %}-{% endif %}</td>
+                    <td>{{ e.start_date|date:'Y-m-d' }}</td>
+                    <td>{{ e.end_date|date:'Y-m-d' }}</td>
+                    <td>{{ e.get_status_display }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                     <td colspan="7" class="text-center p-4 text-muted">
+                         Nėra ekskursijų.
+                     </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
 {% if role == 'teacher' %}
     </form>
 {% endif %}
-
 {% endblock %}

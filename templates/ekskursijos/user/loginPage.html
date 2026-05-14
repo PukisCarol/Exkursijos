@@ -1,20 +1,22 @@
 {% extends 'ekskursijos/user/basePage.html' %}
 {% block title %}Prisijungti{% endblock %}
 {% block content %}
-<h1>Prisijungti</h1>
-<div class="forma-wrap">
+<h1 class="h1">Prisijungti</h1>
+<div class="card">
     <form method="post">
         {% csrf_token %}
         {% for laukas in form %}
-        <div class="laukas">
+        <div class="form-group">
             <label>{{ laukas.label }}</label>
             {{ laukas }}
             {% if laukas.errors %}
-            <p style="color:red; font-size:.85rem;">{{ laukas.errors }}</p>
+            <p class="error">{{ laukas.errors }}</p>
             {% endif %}
         </div>
         {% endfor %}
-        <button type="submit" class="btn btn-green">Prisijungti</button>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-green">Prisijungti</button>
+        </div>
     </form>
-</div>`
+</div>
 {% endblock %}
