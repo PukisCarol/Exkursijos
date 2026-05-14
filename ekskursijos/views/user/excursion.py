@@ -66,9 +66,7 @@ def openGenreVotingPage(request, pk):
     controller = VotingController(playlist, request.user)
     
     all_genres = list(Genre.objects.all())
-    voted_genres = controller.getVotedGenres()
-    
-    # Build list of genre data with vote count
+    voted_genres = list(PlaylistGenre.objects.filter(playlist=playlist).select_related('genre'))
     genres_data = []
     for genre in all_genres:
         pg = next((g for g in voted_genres if g.genre.id == genre.id), None)
@@ -242,7 +240,7 @@ def openExcursionPlaylist(request, pk):
     playlist = get_object_or_404(Playlist, excursion=excursion)
     
     controller = PlaylistController(playlist)
-    context = controller.get_playlist_display_data()
+    context = controller.getPlaylistData()
     context['role'] = role
 
     return render(request, 'ekskursijos/user/playlistPage.html', context)

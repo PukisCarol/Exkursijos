@@ -21,7 +21,7 @@ class VotingController:
     def getPupilID(self):
         return self.pupil.id
 
-    def checkIfPupilVotedAlreadyForThePlaylist(self):
+    def checkIfPupilHasVoted(self):
         return PlaylistGenre.objects.filter(playlist=self.playlist, voted_pupils=self.pupil).exists()
 
     def hasPupilVotedForGenre(self, playlist_genre):
@@ -47,7 +47,7 @@ class VotingController:
         )
 
         # 14:
-        if self.checkIfPupilVotedAlreadyForThePlaylist():
+        if self.checkIfPupilHasVoted():
             # 19-20
             return {'status': 'already_voted', 'message': 'Jau balsavote.'}
 

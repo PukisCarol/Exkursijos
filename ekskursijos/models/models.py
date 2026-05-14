@@ -34,6 +34,9 @@ class Excursion(models.Model):
     def __str__(self):
         return self.name
 
+    def getID(self):
+        return self.id
+
 
 class ExcursionEnrollment(models.Model):
     STATUS_CHOICES = [
@@ -179,6 +182,14 @@ class Playlist(models.Model):
     def __str__(self):
         return f"Playlist for {self.excursion}"
 
+    def getVotes(self):
+        return list(self.playlist_genres.all())
+
+    def updateCreationDate(self):
+        from django.utils import timezone
+        self.creation_date = timezone.now().date()
+        self.save(update_fields=['creation_date'])
+
 
 class PlaylistGenre(models.Model):
     playlist = models.ForeignKey(Playlist, on_delete=models.CASCADE, related_name='playlist_genres')
@@ -188,6 +199,11 @@ class PlaylistGenre(models.Model):
 
     def __str__(self):
         return f"{self.genre} in {self.playlist}"
+
+    def incrementVoteCount(self):
+        self.vote_count += 1
+        self.save(update_fields=['vote_count'])
+        return self.vote_count
 
 
 class PlaylistItem(models.Model):
