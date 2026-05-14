@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.http import JsonResponse
 import json
 from .excursionEnrollment import getAllExcursionParticipants
-from ...models.models import Excursion, Profile, ExcursionEnrollment, Playlist
+from ...models.models import Excursion, Profile, ExcursionEnrollment, Playlist, Genre
 from ...forms import ExcursionForm, PublishExcursionForm
 from .voting_controller import VotingController
 from .playlist_controller import PlaylistController
