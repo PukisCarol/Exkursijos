@@ -1,15 +1,19 @@
 {% extends 'ekskursijos/user/basePage.html' %}
 {% block content %}
-<h2>Patvirtinkite ekskursijų ištrynimą</h2>
-<form method="post">
-    {% csrf_token %}
-    <ul>
-        {% for e in excursions %}
-            <li>{{ e.name }} ({{ e.excursion_date|date:'Y-m-d' }})</li>
-            <input type="hidden" name="confirm_delete_ids" value="{{ e.pk }}">
-        {% endfor %}
-    </ul>
-    <button type="submit" name="confirm_delete" value="yes" class="btn btn-red">Patvirtinti trynimą</button>
-    <a href="{% url 'excursionListPage' %}" class="btn btn-blue">Atšaukti</a>
-</form>
+<h2 class="h2">Patvirtinkite ekskursijų ištrynimą</h2>
+<div class="card">
+    <form method="post">
+        {% csrf_token %}
+        <ul class="mb-2 pl-3">
+            {% for e in excursions %}
+                <li>{{ e.name }} ({{ e.excursion_date|date:'Y-m-d' }})</li>
+                <input type="hidden" name="confirm_delete_ids" value="{{ e.pk }}">
+            {% endfor %}
+        </ul>
+        <div class="form-actions">
+            <button type="submit" name="confirm_delete" value="yes" class="btn btn-red">Patvirtinti trynimą</button>
+            <a href="{% url 'excursionListPage' %}" class="btn btn-blue">Atšaukti</a>
+        </div>
+    </form>
+</div>
 {% endblock %}

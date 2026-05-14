@@ -183,7 +183,7 @@ def openExcursionPlaylist(request, pk):
     playlist = get_object_or_404(Playlist, excursion=excursion)
     
     controller = PlaylistController(playlist)
-    context = controller.open()
+    context = controller.get_playlist_display_data()
     context['role'] = role
 
     return render(request, 'ekskursijos/user/playlistPage.html', context)

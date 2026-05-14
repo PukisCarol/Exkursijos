@@ -1,140 +1,147 @@
 {% extends 'ekskursijos/user/basePage.html' %}
 {% block title %}Daiktų sąrašas{% endblock %}
 {% block content %}
-<h1>Ekskursijos daiktų sąrašas</h1>
+<h1 class="h1">Ekskursijos daiktų sąrašas</h1>
 
-<div style="background:white; padding:1.5rem; border-radius:10px; max-width:900px; box-shadow:0 2px 8px rgba(0,0,0,.1);">
-    <p style="margin:0 0 .75rem 0;"><strong>Ekskursija:</strong> {{ excursion.name }}</p>
+<div class="card">
+    <p class="mb-2"><strong>Ekskursija:</strong> {{ excursion.name }}</p>
 
     {% if not is_published %}
-        <p style="margin:1rem 0; color:#666;">Ekskursija nėra paskelbta. Peržiūrėti daiktus bus galima kai ekskursija bus paskelbta.</p>
+        <p class="mb-2 text-muted">Ekskursija nėra paskelbta. Peržiūrėti daiktus bus galima kai ekskursija bus paskelbta.</p>
     {% elif pupil_has_list and not show_create_form and not show_edit_form %}
         <!-- Display existing pupil list -->
         {% if items %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Nr.</th>
-                        <th>Daiktas</th>
-                        <th>Svarba</th>
-                        <th>Svoris</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for pupil_item in items %}
-                    {% if pupil_item.taken %}
-                    <tr>
-                        <td>{{ forloop.counter }}</td>
-                        <td>{{ pupil_item.item.name }}</td>
-                        <td>{{ pupil_item.importance }}</td>
-                        <td>{{ pupil_item.weight }}</td>
-                    </tr>
-                    {% endif %}
-                    {% endfor %}
-                </tbody>
-            </table>
-            <div style="margin-top:1rem;">
-                <a href="{% url 'openPupilItemList' excursion.pk %}?edit=1" class="btn btn-blue">Redaguoti pasirinkimą</a>
-            </div>
-        {% else %}
-            <p style="margin:1rem 0;">Jūsų sąrašas yra tuščias.</p>
-        {% endif %}
-    {% elif pupil_has_list and show_edit_form %}
-        <h3 style="margin-top:0;">Pasirinkite, kuriuos daiktus pasiimsite</h3>
-        <p style="margin:0 0 1rem 0; color:#666;">Pažymėkite daiktus, kuriuos tikrai pasiimsite į ekskursiją.</p>
-
-        {% if items %}
-            <form method="post" action="" style="display:grid; gap:1rem; max-width:700px;">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="edit">
-
-                <table>
+            <h2 class="mt-2 mb-1">Mano daiktų sąrašas</h2>
+            <div class="table-wrapper">
+                <table class="table">
                     <thead>
                         <tr>
                             <th>Nr.</th>
                             <th>Daiktas</th>
                             <th>Svarba</th>
                             <th>Svoris</th>
-                            <th>Paimti</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for pupil_item in items %}
+                        {% if pupil_item.taken %}
                         <tr>
                             <td>{{ forloop.counter }}</td>
                             <td>{{ pupil_item.item.name }}</td>
                             <td>{{ pupil_item.importance }}</td>
                             <td>{{ pupil_item.weight }}</td>
-                            <td style="text-align:center;">
-                                <input type="checkbox" name="taken_{{ pupil_item.id }}" {% if pupil_item.taken %}checked{% endif %}>
-                            </td>
                         </tr>
+                        {% endif %}
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+            <div class="mt-2">
+                <a href="{% url 'openPupilItemList' excursion.pk %}?edit=1" class="btn btn-blue">Redaguoti pasirinkimą</a>
+            </div>
+        {% else %}
+            <p class="mb-2">Jūsų sąrašas yra tuščias.</p>
+        {% endif %}
+    {% elif pupil_has_list and show_edit_form %}
+        <h3 class="mt-2 mb-1">Pasirinkite, kuriuos daiktus pasiimsite</h3>
+        <p class="mb-2 text-muted">Pažymėkite daiktus, kuriuos tikrai pasiimsite į ekskursiją.</p>
 
-                <div style="display:flex; gap:.5rem; margin-top:1rem;">
+        {% if items %}
+        <form method="post" class="d-grid gap-2 max-w-700">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit">
+
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nr.</th>
+                                <th>Daiktas</th>
+                                <th>Svarba</th>
+                                <th>Svoris</th>
+                                <th>Paimti</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pupil_item in items %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ pupil_item.item.name }}</td>
+                                <td>{{ pupil_item.importance }}</td>
+                                <td>{{ pupil_item.weight }}</td>
+                                <td class="text-center">
+                                    <input type="checkbox" name="taken_{{ pupil_item.id }}" {% if pupil_item.taken %}checked{% endif %}>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="flex gap-1">
                     <button type="submit" class="btn btn-green">Išsaugoti pasirinkimą</button>
                     <a href="{% url 'openPupilItemList' excursion.pk %}" class="btn btn-gray">Atšaukti</a>
                 </div>
             </form>
         {% else %}
-            <p style="margin:1rem 0;">Jūsų sąrašas yra tuščias.</p>
+            <p class="mb-2">Jūsų sąrašas yra tuščias.</p>
         {% endif %}
     {% elif not pupil_has_list and not show_create_form %}
         <!-- Show create button -->
-        <p style="margin:1rem 0 1rem 0;">Sąrašas dar nesukurtas</p>
+        <p class="mb-2">Sąrašas dar nesukurtas</p>
         <a href="{% url 'openPupilItemList' excursion.pk %}?add=1" class="btn btn-green">Kurti sąrašą</a>
     {% elif show_create_form %}
         <!-- Show form to create list -->
-        <h3 style="margin-top:0;">Sudaryti savo daiktų sąrašą</h3>
-        <p style="margin:0 0 1rem 0; color:#666;">Nurodykite kiek svarbus kiekvienas daiktas ir maksimalų leidžiamą kuprinės svorį (kg). Svoris paimamas iš bendro sąrašo.</p>
+        <h3 class="mt-2 mb-1">Sudaryti savo daiktų sąrašą</h3>
+        <p class="mb-2 text-muted">Nurodykite kiek svarbus kiekvienas daiktas ir maksimalų leidžiamą kuprinės svorį (kg). Svoris paimamas iš bendro sąrašo.</p>
         
         {% if shared_items %}
-            <form method="post" action="" style="display:grid; gap:1rem; max-width:600px;">
-                {% csrf_token %}
-                
-                <div style="margin-bottom:1rem;">
-                    <label for="max-weight" style="display:block; margin-bottom:.25rem;"><strong>Maksimalus kuprinės svoris (kg)</strong></label>
-                    <input type="number" id="max-weight" name="max_weight" placeholder="Pvz.: 8" style="width:100%; max-width:200px; padding:.5rem;">
+        <form method="post" class="d-grid gap-2 max-w-600">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="max-weight"><strong>Maksimalus kuprinės svoris (kg)</strong></label>
+                <input type="number" id="max-weight" name="max_weight" placeholder="Pvz.: 8" class="max-w-200">
+            </div>
+
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nr.</th>
+                                <th>Daiktas</th>
+                                <th>Rekomenduojama svarba</th>
+                                <th>Jūsų svarba</th>
+                                <th>Rekomenduojamas svoris (g)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for shared_item in shared_items %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ shared_item.item.name }}</td>
+                                <td>{{ shared_item.importance }}</td>
+                                <td>
+                                    <input type="number" name="importance_{{ shared_item.id }}" value="{{ shared_item.importance }}" class="item-qty-input">
+                                </td>
+                                <td>{{ shared_item.weight }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
 
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nr.</th>
-                            <th>Daiktas</th>
-                            <th>Rekomenduojama svarba</th>
-                            <th>Jūsų svarba</th>
-                            <th>Rekomenduojamas svoris (g)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for shared_item in shared_items %}
-                        <tr>
-                            <td>{{ forloop.counter }}</td>
-                            <td>{{ shared_item.item.name }}</td>
-                            <td>{{ shared_item.importance }}</td>
-                            <td>
-                                <input type="number" name="importance_{{ shared_item.id }}" value="{{ shared_item.importance }}" style="width:70px; padding:.35rem;">
-                            </td>
-                            <td>{{ shared_item.weight }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-
-                <div style="display:flex; gap:.5rem; margin-top:1rem;">
+                <div class="flex gap-1">
                     <button type="submit" class="btn btn-green">Išsaugoti sąrašą</button>
                     <a href="{% url 'openPupilItemList' excursion.pk %}" class="btn btn-gray">Atšaukti</a>
                 </div>
             </form>
         {% else %}
-            <p style="margin:1rem 0; color:#666;">Šiai ekskursijai nėra nustatytų daiktų.</p>
+            <p class="mb-2 text-muted">Šiai ekskursijai nėra nustatytų daiktų.</p>
         {% endif %}
     {% endif %}
 
-    <div class="veiksmai" style="margin-top:1.5rem;">
+    <div class="mt-2">
         <a href="{% url 'ExcursionPage' excursion.pk %}" class="btn btn-gray">← Grįžti</a>
     </div>
 </div>
