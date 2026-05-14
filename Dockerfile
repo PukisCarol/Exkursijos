@@ -12,7 +12,7 @@ RUN uv lock && uv sync
 
 COPY . .
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["/app/.venv/bin/gunicorn", "Exkursijos.wsgi:application", "--bind", "0.0.0.0:8000"]
