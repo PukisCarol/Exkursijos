@@ -378,7 +378,7 @@ class PlaylistController:
         PlaylistItem.objects.bulk_update(list(item_dict.values()), ['order'])
         return item_dict
 
-    def _item_to_dict(self, item):
+    def processItem(self, item):
         start_time = item.start_time if item.start_time is not None else 0
         return {
             'id': item.id,
@@ -405,7 +405,7 @@ def openExcursionPlaylist(request, pk):
     controller = PlaylistController(playlist)
 
     playlist_items = PlaylistItem.objects.filter(playlist=playlist).select_related('song').order_by('order')
-    songs_data = [controller._item_to_dict(item) for item in playlist_items]
+    songs_data = [controller.processItem(item) for item in playlist_items]
 
     return render(request, 'ekskursijos/user/playlistPage.html', {
         'excursion': excursion,
@@ -417,6 +417,9 @@ def openExcursionPlaylist(request, pk):
 
 @login_required
 def openPlaylistItemAddPage(request, pk):
+    if request.method != 'GET':
+        return redirect('PlaylistItemAddPage', pk=pk)
+
     playlist = get_object_or_404(Playlist, excursion__pk=pk)
     excursion = playlist.excursion
     role = _get_role(request.user)
@@ -425,24 +428,48 @@ def openPlaylistItemAddPage(request, pk):
         messages.error(request, 'Only teachers can add songs to playlist.')
         return redirect('ExcursionPage', pk=pk)
 
-    if request.method == 'GET':
-        query = request.GET.get('q', '')
-        search_results = []
-        if query:
-            try:
-                controller = PlaylistController(playlist)
-                search_results = controller.getBestSongMatches(query)
-            except Exception as e:
-                messages.error(request, str(e))
-        return render(request, 'ekskursijos/user/playlistItemAddPage.html', {
-            'excursion': excursion,
-            'playlist': playlist,
-            'role': role,
-            'search_results': search_results,
-            'query': query,
-        })
+    return render(request, 'ekskursijos/user/playlistItemAddPage.html', {
+        'excursion': excursion,
+        'playlist': playlist,
+        'role': role,
+    })
 
-    # POST
+
+@login_required
+def searchSongs(request, pk):
+    if request.method != 'GET':
+        return JsonResponse({'success': False, 'error': 'Only GET allowed'}, status=405)
+
+    playlist = get_object_or_404(Playlist, excursion__pk=pk)
+    role = _get_role(request.user)
+
+    if role != 'teacher':
+        return JsonResponse({'success': False, 'error': 'Only teachers can search songs.'}, status=403)
+
+    query = request.GET.get('q', '').strip()
+    if not query:
+        return JsonResponse({'success': True, 'results': []})
+
+    try:
+        controller = PlaylistController(playlist)
+        results = controller.getBestSongMatches(query)
+        return JsonResponse({'success': True, 'results': results})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+def addSong(request, pk):
+    if request.method != 'POST':
+        return redirect('PlaylistItemAddPage', pk=pk)
+
+    playlist = get_object_or_404(Playlist, excursion__pk=pk)
+    role = _get_role(request.user)
+
+    if role != 'teacher':
+        messages.error(request, 'Only teachers can add songs to playlist.')
+        return redirect('ExcursionPage', pk=pk)
+
     track_id = request.POST.get('track_id')
     track_data_str = request.POST.get('track_data')
 
@@ -451,6 +478,8 @@ def openPlaylistItemAddPage(request, pk):
         return redirect('PlaylistItemAddPage', pk=pk)
 
     try:
+        controller = PlaylistController(playlist)
+        editSongOrder = controller.editSongOrder
         if track_data_str:
             track_data = json.loads(track_data_str)
         else:
@@ -469,7 +498,7 @@ def openPlaylistItemAddPage(request, pk):
             duration=duration_sec
         )
 
-        new_order = controller.editSongOrder()
+        new_order = editSongOrder()
 
         PlaylistItem.objects.create(
             playlist=playlist,
@@ -478,9 +507,7 @@ def openPlaylistItemAddPage(request, pk):
             start_time=0
         )
 
-        controller = PlaylistController(playlist)
         controller.recountItemStartTimes()
-
         messages.success(request, f'Song "{song.title}" added to playlist.')
     except Exception as e:
         messages.error(request, str(e))
@@ -557,7 +584,7 @@ def changePlaylistItemPlace(request, pk):
         items = list(PlaylistItem.objects.filter(playlist=playlist).order_by('order'))
         item_dict = {item.id: item for item in items}
         position_ids = [item.id for item in items]
-        updated = [controller._item_to_dict(item_dict[pid]) for pid in position_ids]
+        updated = [controller.processItem(item_dict[pid]) for pid in position_ids]
         return JsonResponse({'success': True, 'items': updated})
     except ValueError as e:
         logger.error("[CHANGE_ORDER] ValueError: %s", str(e))

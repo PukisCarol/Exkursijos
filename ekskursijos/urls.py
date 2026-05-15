@@ -11,8 +11,10 @@ from .views.user.excursion import (
 from .views.user.playlist_controller import (
     openExcursionPlaylist,
     openPlaylistItemAddPage,
+    searchSongs,
     deletePlaylistItem,
     changePlaylistItemPlace,
+    addSong,
     generate_playlist,
 )
 from .views.user.voting_controller import (
@@ -44,6 +46,8 @@ urlpatterns = [
     path('PlaylistPage/<int:pk>/', openExcursionPlaylist, name='PlaylistPage'),
     path('PlaylistPage/<int:pk>/changePlace/', changePlaylistItemPlace, name='changePlaylistItemPlace'),
     path('PlaylistItemAddPage/<int:pk>/', openPlaylistItemAddPage, name='PlaylistItemAddPage'),
+    path('PlaylistItemAddPage/<int:pk>/search/', searchSongs, name='searchSongs'),
+    path('PlaylistItemAddPage/<int:pk>/add/', addSong, name='addSong'),
     path('PlaylistItem/<int:pk>/<int:item_id>/delete/', deletePlaylistItem, name='deletePlaylistItem'),
     path('PupilsListPage/<int:pk>/', pupilsListPage, name='PupilsListPage'),
     path('TeacherItemPage/<int:pk>/', openTeacherItemLists, name='TeacherItemPage'),

@@ -10,64 +10,87 @@
 </div>
 
 <div class="card mb-3">
-    <form method="get" action="{% url 'PlaylistItemAddPage' excursion.pk %}">
+    <form id="search-form" method="get" action="{% url 'searchSongs' excursion.pk %}">
+        {% csrf_token %}
         <div class="d-flex gap-1 items-end">
             <div class="form-group flex-1">
                 <label for="q">Ieškoti dainos:</label>
-                <input type="text" id="q" name="q" value="{{ query|default:'' }}" placeholder="Įveskite dainos pavadinimą ir atlikėją">
+                <input type="text" id="q" name="q" placeholder="Įveskite dainos pavadinimą ir atlikėją">
             </div>
             <button type="submit" class="btn btn-green px-3">Ieškoti</button>
         </div>
     </form>
 </div>
 
-{% if search_results %}
-<div class="card">
-    <h3 class="mt-0">Rezultatai ({{ search_results|length }})</h3>
-    
-    {% if search_results %}
-    <div class="flex flex-col gap-2">
-        {% for track in search_results %}
-        <div class="border rounded p-2 flex items-center gap-2">
-            {% if track.artwork_url_100 %}
-            <img src="{{ track.artwork_url_100 }}" alt="Album art" class="album-art">
-            {% else %}
-            <div class="album-placeholder">N/A</div>
-            {% endif %}
-            
-            <div class="flex-1">
-                <strong>{{ track.track_name }}</strong><br>
-                <span class="text-muted">{{ track.artist_name }}</span><br>
-                <small>{{ track.collection_name|default:"Unknown Album" }}</small>
-            </div>
-            
-            <div class="text-right">
-                <div>{{ track.duration_str|default:"0:00" }}</div>
-                {% if track.primary_genre_name %}<small>{{ track.primary_genre_name }}</small>{% endif %}
-            </div>
-            
-            <form method="post" action="{% url 'PlaylistItemAddPage' excursion.pk %}">
-                {% csrf_token %}
-                <input type="hidden" name="track_id" value="{{ track.track_id }}">
-                <button type="submit" class="btn btn-green text-nowrap">Pridėti</button>
-            </form>
-        </div>
-        {% endfor %}
-    </div>
-    {% else %}
-    <p>Nerasta jokių rezultatų.</p>
-    {% endif %}
-</div>
-{% endif %}
+<div id="search-status"></div>
 
-{% if query and not search_results %}
-<div class="card mt-3">
-    <p>Nerasta jokių rezultatų už "<strong>{{ query }}</strong>". Bandykite kitą paieškos frazę.</p>
+<div id="search-results" class="card" style="display:none;">
+    <h3 class="mt-0" id="results-heading"></h3>
+    <div id="results-list" class="flex flex-col gap-2"></div>
 </div>
-{% endif %}
 
 <div class="mt-3">
     <a href="{% url 'PlaylistPage' excursion.pk %}" class="btn btn-gray">← Atgal į grojaraštį</a>
     <a href="{% url 'ExcursionPage' excursion.pk %}" class="btn btn-gray">← Atgal į ekskursiją</a>
 </div>
+
+<script>
+document.getElementById('search-form').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const query = document.getElementById('q').value.trim();
+    const statusEl = document.getElementById('search-status');
+    const resultsCard = document.getElementById('search-results');
+    const resultsList = document.getElementById('results-list');
+    const heading = document.getElementById('results-heading');
+
+    statusEl.innerHTML = '';
+    resultsCard.style.display = 'none';
+
+    if (!query) return;
+
+    const url = `{% url 'searchSongs' excursion.pk %}?q=${encodeURIComponent(query)}`;
+
+    try {
+        const response = await fetch(url, {
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+        });
+        const data = await response.json();
+
+        if (!data.success) {
+            statusEl.innerHTML = `<p style="color:red;">Klaida: ${data.error || ' nežinoma'}</p>`;
+            return;
+        }
+
+        const results = data.results || [];
+        if (results.length === 0) {
+            statusEl.innerHTML = `<p>Nerasta jokių rezultatų už "<strong>${query}</strong>". Bandykite kitą paieškos frazę.</p>`;
+            return;
+        }
+
+        heading.textContent = `Rezultatai (${results.length})`;
+        resultsList.innerHTML = results.map(track => `
+            <div class="border rounded p-2 flex items-center gap-2">
+                ${track.artwork_url_100 ? `<img src="${track.artwork_url_100}" alt="Album art" class="album-art">` : `<div class="album-placeholder">N/A</div>`}
+                <div class="flex-1">
+                    <strong>${track.track_name}</strong><br>
+                    <span class="text-muted">${track.artist_name}</span><br>
+                    <small>${track.collection_name || 'Unknown Album'}</small>
+                </div>
+                <div class="text-right">
+                    <div>${track.duration_str || '0:00'}</div>
+                    ${track.primary_genre_name ? `<small>${track.primary_genre_name}</small>` : ''}
+                </div>
+                <form method="post" action="{% url 'addSong' excursion.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="track_id" value="${track.track_id}">
+                    <button type="submit" class="btn btn-green text-nowrap">Pridėti</button>
+                </form>
+            </div>
+        `).join('');
+        resultsCard.style.display = 'block';
+    } catch (err) {
+        statusEl.innerHTML = `<p style="color:red;">Klaida atliekant paiešką.</p>`;
+    }
+});
+</script>
 {% endblock %}
