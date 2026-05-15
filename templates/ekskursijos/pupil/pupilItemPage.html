@@ -37,7 +37,7 @@
                 </table>
             </div>
             <div class="mt-2">
-                <a href="{% url 'openPupilItemList' excursion.pk %}?edit=1" class="btn btn-blue">Redaguoti pasirinkimą</a>
+                <a href="{% url 'openPupilItemLists' excursion.pk %}?edit=1" class="btn btn-blue">Redaguoti pasirinkimą</a>
             </div>
         {% else %}
             <p class="mb-2">Jūsų sąrašas yra tuščias.</p>
@@ -80,16 +80,14 @@
 
                 <div class="flex gap-1">
                     <button type="submit" class="btn btn-green">Išsaugoti pasirinkimą</button>
-                    <a href="{% url 'openPupilItemList' excursion.pk %}" class="btn btn-gray">Atšaukti</a>
+                    <a href="{% url 'openPupilItemLists' excursion.pk %}" class="btn btn-gray">Atšaukti</a>
                 </div>
-            </form>
-        {% else %}
-            <p class="mb-2">Jūsų sąrašas yra tuščias.</p>
-        {% endif %}
+            </div>
+
     {% elif not pupil_has_list and not show_create_form %}
         <!-- Show create button -->
         <p class="mb-2">Sąrašas dar nesukurtas</p>
-        <a href="{% url 'openPupilItemList' excursion.pk %}?add=1" class="btn btn-green">Kurti sąrašą</a>
+        <a href="{% url 'openPupilItemLists' excursion.pk %}?add=1" class="btn btn-green">Kurti sąrašą</a>
     {% elif show_create_form %}
         <!-- Show form to create list -->
         <h3 class="mt-2 mb-1">Sudaryti savo daiktų sąrašą</h3>
@@ -133,7 +131,7 @@
 
                 <div class="flex gap-1">
                     <button type="submit" class="btn btn-green">Išsaugoti sąrašą</button>
-                    <a href="{% url 'openPupilItemList' excursion.pk %}" class="btn btn-gray">Atšaukti</a>
+                    <a href="{% url 'openPupilItemLists' excursion.pk %}" class="btn btn-gray">Atšaukti</a>
                 </div>
             </form>
         {% else %}
