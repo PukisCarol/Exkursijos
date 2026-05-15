@@ -2,6 +2,7 @@ import random
 import math
 import traceback
 import logging
+import json
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.http import JsonResponse
@@ -16,6 +17,10 @@ from ...models.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _get_role(user):
+    return user.profile.role if hasattr(user, 'profile') else None
 
 
 class PlaylistController:
@@ -50,10 +55,6 @@ class PlaylistController:
     # 1
     def getPlaylistID(self):
         return self.playlist.id
-
-    # 2
-
-
 
     # 5
     def checkGenreVotes(self, votes):
@@ -335,36 +336,6 @@ class PlaylistController:
     def getVotes(self):
         return list(PlaylistGenre.objects.filter(playlist=self.playlist).select_related('genre'))
 
-    def getPlaylistData(self):
-        playlist_items = PlaylistItem.objects.filter(playlist=self.playlist).select_related('song').order_by('order')
-
-        songs_data = []
-        for item in playlist_items:
-            song = item.song
-            duration_min = song.duration // 60 if song.duration else 0
-            start_seconds = item.start_time if item.start_time is not None else 0
-            hours = start_seconds // 3600
-            minutes = (start_seconds % 3600) // 60
-            start_time_str = f"{hours:02d}:{minutes:02d}"
-
-            songs_data.append({
-                'order': item.order,
-                'title': song.title,
-                'author': song.author,
-                'language': song.language,
-                'duration': song.duration,
-                'duration_min': duration_min,
-                'start_time': item.start_time,
-                'start_time_str': start_time_str,
-                'item_id': item.id,
-            })
-
-        return {
-            'excursion': self.excursion,
-            'playlist': self.playlist,
-            'songs': songs_data,
-        }
-
     def getBestSongMatches(self, query):
         if not query:
             return []
@@ -380,48 +351,6 @@ class PlaylistController:
             return get_track_details(track_id)
         except Exception as e:
             raise Exception(f'Negauta dainų informacija: {str(e)}')
-
-    def addSong(self, track_data):
-        title = track_data.get('track_name', '')[:200]
-        author = track_data.get('artist_name', '')[:200]
-        language = track_data.get('primary_genre_name', '')[:50]
-        duration_ms = track_data.get('duration_ms', 0)
-        duration_sec = duration_ms // 1000 if duration_ms else 0
-
-        song = Song.objects.create(
-            title=title,
-            author=author,
-            language=language,
-            duration=duration_sec
-        )
-
-        max_order_result = PlaylistItem.objects.filter(playlist=self.playlist).aggregate(
-            max_order=Max('order')
-        )
-        max_order = max_order_result['max_order'] if max_order_result['max_order'] is not None else 0
-        new_order = max_order + 1
-
-        PlaylistItem.objects.create(
-            playlist=self.playlist,
-            song=song,
-            order=new_order,
-            start_time=0
-        )
-
-        self.recountItemStartTimes()
-
-        return song
-
-    def deletePlaylistItem(self, item_id):
-        playlist_item = get_object_or_404(PlaylistItem, pk=item_id, playlist=self.playlist)
-        song = playlist_item.song
-        playlist_item.delete()
-        song.delete()
-        remaining_items = list(PlaylistItem.objects.filter(playlist=self.playlist).order_by('order'))
-        for idx, item in enumerate(remaining_items, start=1):
-            item.order = idx
-        PlaylistItem.objects.bulk_update(remaining_items, ['order'])
-        self.recountItemStartTimes()
 
     def reorderItems(self, items, item_id, new_order):
         """
@@ -444,33 +373,6 @@ class PlaylistController:
         PlaylistItem.objects.bulk_update(list(item_dict.values()), ['order'])
         return item_dict
 
-    def changePlaylistItemPlace(self, item_id, new_order):
-        try:
-            item_id = int(item_id)
-            new_order = int(new_order)
-        except (ValueError, TypeError):
-            raise ValueError('Invalid item_id or new_order format')
-
-        current_item = PlaylistItem.objects.get(pk=item_id, playlist=self.playlist)
-        items = list(PlaylistItem.objects.filter(playlist=self.playlist).order_by('order'))
-        total_items = len(items)
-
-        if new_order < 1 or new_order > total_items:
-            raise ValueError(f'Reikšmės turi būti tarp {total_items}.')
-
-        if item_id not in [item.id for item in items]:
-            raise ValueError(f'Item {item_id} not found in playlist')
-
-        with transaction.atomic():
-            item_dict = self.reorderItems(items, item_id, new_order)
-
-        self.recountItemStartTimes()
-
-        items = list(PlaylistItem.objects.filter(playlist=self.playlist).order_by('order'))
-        item_dict = {item.id: item for item in items}
-        position_ids = [item.id for item in items]
-        return [self._item_to_dict(item_dict[pid]) for pid in position_ids]
-
     def _item_to_dict(self, item):
         start_time = item.start_time if item.start_time is not None else 0
         return {
@@ -484,100 +386,34 @@ class PlaylistController:
             'duration_min': item.song.duration // 60 if item.song.duration else 0
         }
 
-    # generavimas
-    def generate(self):
-        try:
-            self.getPlaylistID()
-            votes = self.getVotes()
-            all_genres = list(Genre.objects.all())
-            if self.checkGenreVotes(votes):
-                self.setMostVotedAsFavourite(votes)
-            else:
-                self.setHeavyMetalAsFavourite()
-            self.getExcursionID()
-            self.getExcursionPlaces()
-            self.getExcursionPlaceTypes()
-            self.getAllGenrePrices()
-
-            self.unprocessed_places = self.places[:]
-            while self.unprocessed_places:
-                place = self.unprocessed_places.pop(0)
-                genres = self.getPlaceGenres(place)
-                self.place_genres.append(genres)
-                self.markPlaceProcessed(place)
-
-            start_sec, end_sec = self.getExcursionStartAndEnd()
-
-            self.N = self.findRequiredSongsCount(start_sec, end_sec)
-
-            raw_songs = self.getRandomSongs(self.N * 10)
-            self.songs = self.filterRequiredSongCount(raw_songs, self.N)
-
-            self.getRelevantSongPrices()
-
-            self.findSmallestPriceForEachSongCombination()
-
-            initial_perm = self.createRandomSolution()
-            start_cost = self.findStartingPrice(initial_perm)
-            self.setCurrentSolution(initial_perm, start_cost)
-            self.best_solution = initial_perm.copy()
-            self.best_cost = start_cost
-
-            self.setStartingSAParameters()
-
-            if self.N > 1:
-                while self.T > self.Tmin and self.iteration < self.max_iter:
-                    neighbor = self.generateNeighbor(self.current_solution)
-                    cost = self.calculateCost(neighbor)
-                    delta = cost - self.current_cost
-                    if delta < 0:
-                        self.setCurrentSolution(neighbor, cost)
-                        self.saveAsTempBest(neighbor, cost)
-                    else:
-                        if self.decideWhetherToTakeSolution(delta):
-                            self.setCurrentSolution(neighbor, cost)
-                    if self.iteration > 0 and self.iteration % self.iterations_at_min_temp == 0:
-                        self.decreaseTemperature()
-                    self.incrementCurrentIterations()
-
-            with transaction.atomic():
-                self.deleteCurrentItems()
-                self.bulk_create_songs_and_items()
-                self.recountItemStartTimes()
-                self.updateCreationDate()
-
-            return self.playlist
-
-        except Exception:
-            logger.error("PlaylistController.generate() FAILED:\n%s", traceback.format_exc())
-            raise
-
-
-# --------------- route handlers ---------------
-
-def _get_role(user):
-    return user.profile.role if hasattr(user, 'profile') else None
 
 
 @login_required
 def openExcursionPlaylist(request, pk):
-    playlist = get_object_or_404(Playlist, excursion__pk=pk)
-    controller = PlaylistController(playlist)
-
     role = _get_role(request.user)
     if role not in ('teacher', 'pupil'):
         messages.error(request, 'You do not have access to this playlist.')
         return redirect('excursionListPage')
 
-    context = controller.getPlaylistData()
-    context['role'] = role
-    return render(request, 'ekskursijos/user/playlistPage.html', context)
+    playlist = get_object_or_404(Playlist, excursion__pk=pk)
+    excursion = playlist.excursion
+    controller = PlaylistController(playlist)
+
+    playlist_items = PlaylistItem.objects.filter(playlist=playlist).select_related('song').order_by('order')
+    songs_data = [controller._item_to_dict(item) for item in playlist_items]
+
+    return render(request, 'ekskursijos/user/playlistPage.html', {
+        'excursion': excursion,
+        'playlist': playlist,
+        'songs': songs_data,
+        'role': role,
+    })
 
 
 @login_required
 def openPlaylistItemAddPage(request, pk):
     playlist = get_object_or_404(Playlist, excursion__pk=pk)
-    controller = PlaylistController(playlist)
+    excursion = playlist.excursion
     role = _get_role(request.user)
 
     if role != 'teacher':
@@ -589,55 +425,90 @@ def openPlaylistItemAddPage(request, pk):
         search_results = []
         if query:
             try:
+                controller = PlaylistController(playlist)
                 search_results = controller.getBestSongMatches(query)
             except Exception as e:
                 messages.error(request, str(e))
-
         return render(request, 'ekskursijos/user/playlistItemAddPage.html', {
-            'excursion': controller.excursion,
+            'excursion': excursion,
             'playlist': playlist,
             'role': role,
             'search_results': search_results,
             'query': query,
         })
 
-    elif request.method == 'POST':
-        track_id = request.POST.get('track_id')
-        track_data_str = request.POST.get('track_data')
+    # POST
+    track_id = request.POST.get('track_id')
+    track_data_str = request.POST.get('track_data')
 
-        if not track_id and not track_data_str:
-            messages.error(request, 'No song selected.')
-            return redirect('PlaylistItemAddPage', pk=pk)
+    if not track_id and not track_data_str:
+        messages.error(request, 'No song selected.')
+        return redirect('PlaylistItemAddPage', pk=pk)
 
-        try:
-            if track_data_str:
-                track_data = json.loads(track_data_str)
-            else:
-                track_data = controller.getSongDetails(track_id)
+    try:
+        if track_data_str:
+            track_data = json.loads(track_data_str)
+        else:
+            track_data = get_track_details(track_id)
 
-            song = controller.addSong(track_data)
-            messages.success(request, f'Song "{song.title}" added to playlist.')
-        except Exception as e:
-            messages.error(request, str(e))
-            return redirect('PlaylistItemAddPage', pk=pk)
+        title = track_data.get('track_name', '')[:200]
+        author = track_data.get('artist_name', '')[:200]
+        language = track_data.get('primary_genre_name', '')[:50]
+        duration_ms = track_data.get('duration_ms', 0)
+        duration_sec = duration_ms // 1000 if duration_ms else 0
 
-        return redirect('PlaylistPage', pk=pk)
+        song = Song.objects.create(
+            title=title,
+            author=author,
+            language=language,
+            duration=duration_sec
+        )
+
+        max_order_result = PlaylistItem.objects.filter(playlist=playlist).aggregate(max_order=Max('order'))
+        max_order = max_order_result['max_order'] if max_order_result['max_order'] is not None else 0
+        new_order = max_order + 1
+
+        PlaylistItem.objects.create(
+            playlist=playlist,
+            song=song,
+            order=new_order,
+            start_time=0
+        )
+
+        controller = PlaylistController(playlist)
+        controller.recountItemStartTimes()
+
+        messages.success(request, f'Song "{song.title}" added to playlist.')
+    except Exception as e:
+        messages.error(request, str(e))
+        return redirect('PlaylistItemAddPage', pk=pk)
+
+    return redirect('PlaylistPage', pk=pk)
 
 
 @login_required
 def deletePlaylistItem(request, pk, item_id):
-    if request.method != 'POST':
+    role = _get_role(request.user)
+    if role != 'teacher':
+        messages.error(request, 'Only teachers can delete playlist items.')
         return redirect('PlaylistPage', pk=pk)
 
-    if _get_role(request.user) != 'teacher':
-        messages.error(request, 'Only teachers can delete playlist items.')
+    if request.method != 'POST':
         return redirect('PlaylistPage', pk=pk)
 
     playlist = get_object_or_404(Playlist, excursion__pk=pk)
     controller = PlaylistController(playlist)
-
     try:
-        controller.deletePlaylistItem(item_id)
+        # inline controller.deletePlaylistItem(item_id)
+        playlist_item = get_object_or_404(PlaylistItem, pk=item_id, playlist=playlist)
+        song = playlist_item.song
+        playlist_item.delete()
+        song.delete()
+        remaining_items = list(PlaylistItem.objects.filter(playlist=playlist).order_by('order'))
+        for idx, item in enumerate(remaining_items, start=1):
+            item.order = idx
+        PlaylistItem.objects.bulk_update(remaining_items, ['order'])
+        controller.recountItemStartTimes()
     except Exception as e:
         messages.error(request, str(e))
 
@@ -646,11 +517,12 @@ def deletePlaylistItem(request, pk, item_id):
 
 @login_required
 def changePlaylistItemPlace(request, pk):
-    if request.method != 'POST':
-        return redirect('PlaylistPage', pk=pk)
-
-    if _get_role(request.user) != 'teacher':
+    role = _get_role(request.user)
+    if role != 'teacher':
         return JsonResponse({'success': False, 'error': 'Only teachers can modify playlist order.'})
+
+    playlist = get_object_or_404(Playlist, excursion__pk=pk)
+    controller = PlaylistController(playlist)
 
     item_id = request.POST.get('item_id')
     new_order = request.POST.get('new_order')
@@ -658,12 +530,33 @@ def changePlaylistItemPlace(request, pk):
     if not item_id or not new_order:
         return JsonResponse({'success': False, 'error': 'Missing item_id or new_order.'})
 
-    playlist = get_object_or_404(Playlist, excursion__pk=pk)
-    controller = PlaylistController(playlist)
+    try:
+        item_id = int(item_id)
+        new_order = int(new_order)
+    except (ValueError, TypeError):
+        return JsonResponse({'success': False, 'error': 'Invalid item_id or new_order format'})
 
     try:
-        updated_items = controller.changePlaylistItemPlace(item_id, new_order)
-        return JsonResponse({'success': True, 'items': updated_items})
+       # current_item = PlaylistItem.objects.get(pk=item_id, playlist=playlist)
+        items = list(PlaylistItem.objects.filter(playlist=playlist).order_by('order'))
+        total_items = len(items)
+
+        if new_order < 1 or new_order > total_items:
+            return JsonResponse({'success': False, 'error': f'Reikšmės turi būti tarp {total_items}.'})
+
+        if item_id not in [item.id for item in items]:
+            return JsonResponse({'success': False, 'error': f'Item {item_id} not found in playlist'})
+
+        with transaction.atomic():
+            item_dict = controller.reorderItems(items, item_id, new_order)
+
+        controller.recountItemStartTimes()
+
+        items = list(PlaylistItem.objects.filter(playlist=playlist).order_by('order'))
+        item_dict = {item.id: item for item in items}
+        position_ids = [item.id for item in items]
+        updated = [controller._item_to_dict(item_dict[pid]) for pid in position_ids]
+        return JsonResponse({'success': True, 'items': updated})
     except ValueError as e:
         logger.error("[CHANGE_ORDER] ValueError: %s", str(e))
         return JsonResponse({'success': False, 'error': str(e)})
@@ -674,16 +567,75 @@ def changePlaylistItemPlace(request, pk):
 
 @login_required
 def generate_playlist(request, pk):
-    excursion = get_object_or_404(Excursion, pk=pk)
-    if _get_role(request.user) != 'teacher':
-        messages.error(request, 'Tik mokytojai gali generuoti grojaraščius.')
+    if request.method != 'POST':
+        messages.error(request, 'Invalid request method.')
         return redirect('ExcursionPage', pk=pk)
-    playlist = get_object_or_404(Playlist, excursion=excursion)
+
+    if _get_role(request.user) != 'teacher':
+        messages.error(request, 'Tik mokytojai gali generuoti grojarastius.')
+        return redirect('ExcursionPage', pk=pk)
+
+    playlist = get_object_or_404(Playlist, excursion__pk=pk)
+    excursion = playlist.excursion
     controller = PlaylistController(playlist)
-    if request.method == 'POST':
-        try:
-            controller.generate()
-        except Exception as e:
-            messages.error(request, f'Error: {str(e)}')
-        return redirect('PlaylistPage', pk=pk)
-    return redirect('ExcursionPage', pk=pk)
+
+    try:
+        # inline controller.generate()
+        controller.getPlaylistID()
+        votes = controller.getVotes()
+        all_genres = list(Genre.objects.all())
+        if controller.checkGenreVotes(votes):
+            controller.setMostVotedAsFavourite(votes)
+        else:
+            controller.setHeavyMetalAsFavourite()
+        controller.getExcursionID()
+        controller.getExcursionPlaces()
+        controller.getExcursionPlaceTypes()
+        controller.getAllGenrePrices()
+
+        controller.unprocessed_places = controller.places[:]
+        while controller.unprocessed_places:
+            place = controller.unprocessed_places.pop(0)
+            genres = controller.getPlaceGenres(place)
+            controller.place_genres.append(genres)
+            controller.markPlaceProcessed(place)
+
+        start_sec, end_sec = controller.getExcursionStartAndEnd()
+        controller.N = controller.findRequiredSongsCount(start_sec, end_sec)
+        raw_songs = controller.getRandomSongs(controller.N * 10)
+        controller.songs = controller.filterRequiredSongCount(raw_songs, controller.N)
+        controller.getRelevantSongPrices()
+        controller.findSmallestPriceForEachSongCombination()
+
+        initial_perm = controller.createRandomSolution()
+        start_cost = controller.findStartingPrice(initial_perm)
+        controller.setCurrentSolution(initial_perm, start_cost)
+        controller.best_solution = initial_perm.copy()
+        controller.best_cost = start_cost
+        controller.setStartingSAParameters()
+
+        if controller.N > 1:
+            while controller.T > controller.Tmin and controller.iteration < controller.max_iter:
+                neighbor = controller.generateNeighbor(controller.current_solution)
+                cost = controller.calculateCost(neighbor)
+                delta = cost - controller.current_cost
+                if delta < 0:
+                    controller.setCurrentSolution(neighbor, cost)
+                    controller.saveAsTempBest(neighbor, cost)
+                else:
+                    if controller.decideWhetherToTakeSolution(delta):
+                        controller.setCurrentSolution(neighbor, cost)
+                if controller.iteration > 0 and controller.iteration % controller.iterations_at_min_temp == 0:
+                    controller.decreaseTemperature()
+                controller.incrementCurrentIterations()
+
+        with transaction.atomic():
+            controller.deleteCurrentItems()
+            controller.bulk_create_songs_and_items()
+            controller.recountItemStartTimes()
+            controller.updateCreationDate()
+    except Exception as e:
+        logger.error("PlaylistController.generate() FAILED:\n%s", traceback.format_exc())
+        messages.error(request, f'Error: {str(e)}')
+
+    return redirect('PlaylistPage', pk=pk)
