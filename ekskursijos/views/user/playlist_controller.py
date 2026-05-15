@@ -2,10 +2,13 @@ import random
 import math
 import traceback
 import logging
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from django.http import JsonResponse
 from django.utils import timezone
 from django.db import transaction
 from django.db.models import Max
-from django.shortcuts import get_object_or_404
+from django.contrib.auth.decorators import login_required
 from ...services.music_api import search_songs, get_track_details
 from ...models.models import (
     Playlist, Excursion, ListOfPlaces, ObjectAddressProgress,
@@ -334,7 +337,7 @@ class PlaylistController:
 
     def getPlaylistData(self):
         playlist_items = PlaylistItem.objects.filter(playlist=self.playlist).select_related('song').order_by('order')
-        
+
         songs_data = []
         for item in playlist_items:
             song = item.song
@@ -343,7 +346,7 @@ class PlaylistController:
             hours = start_seconds // 3600
             minutes = (start_seconds % 3600) // 60
             start_time_str = f"{hours:02d}:{minutes:02d}"
-            
+
             songs_data.append({
                 'order': item.order,
                 'title': song.title,
@@ -355,7 +358,7 @@ class PlaylistController:
                 'start_time_str': start_time_str,
                 'item_id': item.id,
             })
-        
+
         return {
             'excursion': self.excursion,
             'playlist': self.playlist,
@@ -425,21 +428,19 @@ class PlaylistController:
         Reorder playlist items by moving item_id to new_order position.
         Returns updated item_dict with correct order values.
         """
-        # Set all items to temporary negative orders to avoid constraint conflicts
         for idx, item in enumerate(items):
             item.order = -(idx + 1)
         PlaylistItem.objects.bulk_update(items, ['order'])
-        
-        # Now rebuild the correct order
+
         items = list(PlaylistItem.objects.filter(playlist=self.playlist).order_by('order'))
         item_dict = {item.id: item for item in items}
         position_ids = [item.id for item in items]
         position_ids.remove(item_id)
         position_ids.insert(new_order - 1, item_id)
-        
+
         for idx, pid in enumerate(position_ids, start=1):
             item_dict[pid].order = idx
-        
+
         PlaylistItem.objects.bulk_update(list(item_dict.values()), ['order'])
         return item_dict
 
@@ -449,22 +450,22 @@ class PlaylistController:
             new_order = int(new_order)
         except (ValueError, TypeError):
             raise ValueError('Invalid item_id or new_order format')
-        
+
         current_item = PlaylistItem.objects.get(pk=item_id, playlist=self.playlist)
         items = list(PlaylistItem.objects.filter(playlist=self.playlist).order_by('order'))
         total_items = len(items)
-        
+
         if new_order < 1 or new_order > total_items:
             raise ValueError(f'Reikšmės turi būti tarp {total_items}.')
-        
+
         if item_id not in [item.id for item in items]:
             raise ValueError(f'Item {item_id} not found in playlist')
-        
+
         with transaction.atomic():
             item_dict = self.reorderItems(items, item_id, new_order)
-        
+
         self.recountItemStartTimes()
-        
+
         items = list(PlaylistItem.objects.filter(playlist=self.playlist).order_by('order'))
         item_dict = {item.id: item for item in items}
         position_ids = [item.id for item in items]
@@ -486,7 +487,6 @@ class PlaylistController:
     # generavimas
     def generate(self):
         try:
-            # 1-9
             self.getPlaylistID()
             votes = self.getVotes()
             all_genres = list(Genre.objects.all())
@@ -499,7 +499,6 @@ class PlaylistController:
             self.getExcursionPlaceTypes()
             self.getAllGenrePrices()
 
-            # 20-21
             self.unprocessed_places = self.places[:]
             while self.unprocessed_places:
                 place = self.unprocessed_places.pop(0)
@@ -507,23 +506,17 @@ class PlaylistController:
                 self.place_genres.append(genres)
                 self.markPlaceProcessed(place)
 
-            # 22-23
             start_sec, end_sec = self.getExcursionStartAndEnd()
 
-            # 24
             self.N = self.findRequiredSongsCount(start_sec, end_sec)
 
-            # 25-28
             raw_songs = self.getRandomSongs(self.N * 10)
             self.songs = self.filterRequiredSongCount(raw_songs, self.N)
 
-            # 30
             self.getRelevantSongPrices()
 
-            # 32
             self.findSmallestPriceForEachSongCombination()
 
-            # 31-33
             initial_perm = self.createRandomSolution()
             start_cost = self.findStartingPrice(initial_perm)
             self.setCurrentSolution(initial_perm, start_cost)
@@ -558,3 +551,139 @@ class PlaylistController:
         except Exception:
             logger.error("PlaylistController.generate() FAILED:\n%s", traceback.format_exc())
             raise
+
+
+# --------------- route handlers ---------------
+
+def _get_role(user):
+    return user.profile.role if hasattr(user, 'profile') else None
+
+
+@login_required
+def openExcursionPlaylist(request, pk):
+    playlist = get_object_or_404(Playlist, excursion__pk=pk)
+    controller = PlaylistController(playlist)
+
+    role = _get_role(request.user)
+    if role not in ('teacher', 'pupil'):
+        messages.error(request, 'You do not have access to this playlist.')
+        return redirect('excursionListPage')
+
+    context = controller.getPlaylistData()
+    context['role'] = role
+    return render(request, 'ekskursijos/user/playlistPage.html', context)
+
+
+@login_required
+def openPlaylistItemAddPage(request, pk):
+    playlist = get_object_or_404(Playlist, excursion__pk=pk)
+    controller = PlaylistController(playlist)
+    role = _get_role(request.user)
+
+    if role != 'teacher':
+        messages.error(request, 'Only teachers can add songs to playlist.')
+        return redirect('ExcursionPage', pk=pk)
+
+    if request.method == 'GET':
+        query = request.GET.get('q', '')
+        search_results = []
+        if query:
+            try:
+                search_results = controller.getBestSongMatches(query)
+            except Exception as e:
+                messages.error(request, str(e))
+
+        return render(request, 'ekskursijos/user/playlistItemAddPage.html', {
+            'excursion': controller.excursion,
+            'playlist': playlist,
+            'role': role,
+            'search_results': search_results,
+            'query': query,
+        })
+
+    elif request.method == 'POST':
+        track_id = request.POST.get('track_id')
+        track_data_str = request.POST.get('track_data')
+
+        if not track_id and not track_data_str:
+            messages.error(request, 'No song selected.')
+            return redirect('PlaylistItemAddPage', pk=pk)
+
+        try:
+            if track_data_str:
+                track_data = json.loads(track_data_str)
+            else:
+                track_data = controller.getSongDetails(track_id)
+
+            song = controller.addSong(track_data)
+            messages.success(request, f'Song "{song.title}" added to playlist.')
+        except Exception as e:
+            messages.error(request, str(e))
+            return redirect('PlaylistItemAddPage', pk=pk)
+
+        return redirect('PlaylistPage', pk=pk)
+
+
+@login_required
+def deletePlaylistItem(request, pk, item_id):
+    if request.method != 'POST':
+        return redirect('PlaylistPage', pk=pk)
+
+    if _get_role(request.user) != 'teacher':
+        messages.error(request, 'Only teachers can delete playlist items.')
+        return redirect('PlaylistPage', pk=pk)
+
+    playlist = get_object_or_404(Playlist, excursion__pk=pk)
+    controller = PlaylistController(playlist)
+
+    try:
+        controller.deletePlaylistItem(item_id)
+    except Exception as e:
+        messages.error(request, str(e))
+
+    return redirect('PlaylistPage', pk=pk)
+
+
+@login_required
+def changePlaylistItemPlace(request, pk):
+    if request.method != 'POST':
+        return redirect('PlaylistPage', pk=pk)
+
+    if _get_role(request.user) != 'teacher':
+        return JsonResponse({'success': False, 'error': 'Only teachers can modify playlist order.'})
+
+    item_id = request.POST.get('item_id')
+    new_order = request.POST.get('new_order')
+
+    if not item_id or not new_order:
+        return JsonResponse({'success': False, 'error': 'Missing item_id or new_order.'})
+
+    playlist = get_object_or_404(Playlist, excursion__pk=pk)
+    controller = PlaylistController(playlist)
+
+    try:
+        updated_items = controller.changePlaylistItemPlace(item_id, new_order)
+        return JsonResponse({'success': True, 'items': updated_items})
+    except ValueError as e:
+        logger.error("[CHANGE_ORDER] ValueError: %s", str(e))
+        return JsonResponse({'success': False, 'error': str(e)})
+    except Exception as e:
+        logger.error("[CHANGE_ORDER] Exception: %s\n%s", str(e), traceback.format_exc())
+        return JsonResponse({'success': False, 'error': f'Server error: {str(e)}'})
+
+
+@login_required
+def generate_playlist(request, pk):
+    excursion = get_object_or_404(Excursion, pk=pk)
+    if _get_role(request.user) != 'teacher':
+        messages.error(request, 'Tik mokytojai gali generuoti grojaraščius.')
+        return redirect('ExcursionPage', pk=pk)
+    playlist = get_object_or_404(Playlist, excursion=excursion)
+    controller = PlaylistController(playlist)
+    if request.method == 'POST':
+        try:
+            controller.generate()
+        except Exception as e:
+            messages.error(request, f'Error: {str(e)}')
+        return redirect('PlaylistPage', pk=pk)
+    return redirect('ExcursionPage', pk=pk)

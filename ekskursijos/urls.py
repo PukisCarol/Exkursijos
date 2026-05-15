@@ -2,16 +2,20 @@ from django.urls import path
 from .views.user.excursion import (
     addExcursion,
     deleteExcursion,
-    deletePlaylistItem,
     getExcursionList,
     openExcursion,
     mainPage,
     openJoinExcursionPage,
     pupilsListPage,
+)
+from .views.user.playlist_controller import (
     openExcursionPlaylist,
     openPlaylistItemAddPage,
+    deletePlaylistItem,
     changePlaylistItemPlace,
     generate_playlist,
+)
+from .views.user.voting_controller import (
     openGenreVotingPage,
     vote_for_genre,
 )
