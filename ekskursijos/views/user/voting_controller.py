@@ -1,17 +1,62 @@
-from django.shortcuts import get_object_or_404
-from ...models.models import Playlist, Genre, PlaylistGenre
+from django.shortcuts import get_object_or_404, render
+from django.http import JsonResponse
+from ...models.models import Playlist, Genre, PlaylistGenre, Excursion
 
 
 class VotingController:
 
-    def __init__(self, playlist, pupil):
-        self.playlist = playlist
+    def __init__(self, excursion, pupil):
+        self.excursion = excursion
         self.pupil = pupil
+        self.playlist = get_object_or_404(Playlist, excursion=excursion)
+
+    # mememe nekenciu puslapiu interneto
+    def handle_request(self, request):
+        """Route request to appropriate handler based on method."""
+        if request.method == 'POST':
+            return self.handle_vote(request)
+        else:
+            return self.handle_display(request)
+
+    def handle_display(self, request):
+        """Handle GET request to display voting page."""
+        all_genres = list(Genre.objects.all())
+        voted_genres = self.getVotedGenres()
+        
+        # nedarysiu sequence diagramoj for nes tingiu lmao
+        genres_data = []
+        for genre in all_genres:
+            pg = next((g for g in voted_genres if g.genre.id == genre.id), None)
+            genres_data.append({
+                'genre': genre,
+                'vote_count': pg.vote_count if pg else 0,
+            })
+        
+        return render(request, 'ekskursijos/user/GenreVotingPage.html', {
+            'excursion': self.excursion,
+            'playlist': self.playlist,
+            'genres_data': genres_data,
+            'role': request.user.profile.role if hasattr(request.user, 'profile') else None,
+        })
+
+    def handle_vote(self, request):
+        """Handle POST request for voting."""
+        genre_id = request.POST.get('genre_id')
+        if not genre_id:
+            return JsonResponse({'status': 'error', 'message': 'Genre not provided.'}, status=400)
+        
+        try:
+            genre_id = int(genre_id)
+        except ValueError:
+            return JsonResponse({'status': 'error', 'message': 'Invalid genre ID.'}, status=400)
+        
+        result = self.voteForGenre(genre_id)
+        status_code = 200 if result['status'] == 'success' else 400
+        return JsonResponse(result, status=status_code)
 
     # 3-4
     def getPlaylistID(self):
         return self.playlist.id
-
 
     # 7-8
     def getVotedGenres(self):
@@ -21,7 +66,7 @@ class VotingController:
     def getPupilID(self):
         return self.pupil.id
 
-    def checkIfPupilVotedAlreadyForThePlaylist(self):
+    def checkIfPupilHasVoted(self):
         return PlaylistGenre.objects.filter(playlist=self.playlist, voted_pupils=self.pupil).exists()
 
     def hasPupilVotedForGenre(self, playlist_genre):
@@ -47,7 +92,7 @@ class VotingController:
         )
 
         # 14:
-        if self.checkIfPupilVotedAlreadyForThePlaylist():
+        if self.checkIfPupilHasVoted():
             # 19-20
             return {'status': 'already_voted', 'message': 'Jau balsavote.'}
 

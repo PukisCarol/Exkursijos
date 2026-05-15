@@ -58,7 +58,7 @@ document.querySelectorAll('.vote-btn').forEach(button => {
         const genreId = this.dataset.genreId;
         const row = this.closest('tr');
         
-        fetch("{% url 'vote_for_genre' excursion.pk %}", {
+        fetch("{% url 'voteForGenre' excursion.pk %}", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',

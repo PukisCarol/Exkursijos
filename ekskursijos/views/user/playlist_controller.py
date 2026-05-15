@@ -324,7 +324,7 @@ class PlaylistController:
         self.playlist.creation_date = timezone.now().date()
         self.playlist.save(update_fields=['creation_date'])
 
-    def get_playlist_display_data(self):
+    def getPlaylistData(self):
         playlist_items = PlaylistItem.objects.filter(playlist=self.playlist).select_related('song').order_by('order')
         
         songs_data = []
@@ -420,65 +420,32 @@ class PlaylistController:
         if new_order < 1 or new_order > total_items:
             raise ValueError(f'Reikšmės turi būti tarp {total_items}.')
         
-        old_order = current_item.order
+        # Reorder in memory
+        item_dict = {item.id: item for item in items}
+        position_ids = [item.id for item in items]
+        position_ids.remove(item_id)
+        position_ids.insert(new_order - 1, item_id)
         
-        if old_order == new_order:
-            all_items = PlaylistItem.objects.filter(playlist=self.playlist).order_by('order')
-            updated_items = []
-            for item in all_items:
-                updated_items.append({
-                    'id': item.id,
-                    'order': item.order,
-                    'start_time': item.start_time,
-                    'start_time_str': f"{item.start_time // 3600:02d}:{(item.start_time % 3600) // 60:02d}",
-                    'title': item.song.title,
-                    'author': item.song.author,
-                    'language': item.song.language,
-                    'duration_min': item.song.duration // 60 if item.song.duration else 0
-                })
-            return updated_items
-        
-        for item in items:
-            item.order = -item.order
+        for idx, pid in enumerate(position_ids, start=1):
+            item_dict[pid].order = idx
         
         PlaylistItem.objects.bulk_update(items, ['order'])
-        
-        items = list(PlaylistItem.objects.filter(playlist=self.playlist).order_by('order'))
-        
-        for item in items:
-            abs_order = abs(item.order)
-            if item.id == current_item.id:
-                item.order = new_order
-            elif new_order > old_order:
-                if old_order < abs_order <= new_order:
-                    item.order = abs_order - 1
-                else:
-                    item.order = abs_order
-            else:
-                if new_order <= abs_order < old_order:
-                    item.order = abs_order + 1
-                else:
-                    item.order = abs_order
-        
-        PlaylistItem.objects.bulk_update(items, ['order'])
-        
         self.recountItemStartTimes()
         
-        all_items = PlaylistItem.objects.filter(playlist=self.playlist).order_by('order')
-        updated_items = []
-        for item in all_items:
-            updated_items.append({
-                'id': item.id,
-                'order': item.order,
-                'start_time': item.start_time,
-                'start_time_str': f"{item.start_time // 3600:02d}:{(item.start_time % 3600) // 60:02d}",
-                'title': item.song.title,
-                'author': item.song.author,
-                'language': item.song.language,
-                'duration_min': item.song.duration // 60 if item.song.duration else 0
-            })
-        
-        return updated_items
+        return [self._item_to_dict(item_dict[pid]) for pid in position_ids]
+
+    def _item_to_dict(self, item):
+        start_time = item.start_time if item.start_time is not None else 0
+        return {
+            'id': item.id,
+            'order': item.order,
+            'start_time': start_time,
+            'start_time_str': f"{start_time // 3600:02d}:{(start_time % 3600) // 60:02d}",
+            'title': item.song.title,
+            'author': item.song.author,
+            'language': item.song.language,
+            'duration_min': item.song.duration // 60 if item.song.duration else 0
+        }
 
     # generavimas
     def generate(self):

@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.http import JsonResponse
 import json
 from .excursionEnrollment import getAllExcursionParticipants
-from ...models.models import Excursion, Profile, ExcursionEnrollment, Playlist, Genre
+from ...models.models import Excursion, Profile, ExcursionEnrollment
 from ...forms import ExcursionForm, PublishExcursionForm
 from .voting_controller import VotingController
 from .playlist_controller import PlaylistController
@@ -62,27 +62,8 @@ def openGenreVotingPage(request, pk):
         messages.error(request, 'Only pupils can vote.')
         return redirect('ExcursionPage', pk=pk)
     
-    playlist = get_object_or_404(Playlist, excursion=excursion)
-    controller = VotingController(playlist, request.user)
-    
-    all_genres = list(Genre.objects.all())
-    voted_genres = controller.getVotedGenres()
-    
-    # Build list of genre data with vote count
-    genres_data = []
-    for genre in all_genres:
-        pg = next((g for g in voted_genres if g.genre.id == genre.id), None)
-        genres_data.append({
-            'genre': genre,
-            'vote_count': pg.vote_count if pg else 0,
-        })
-    
-    return render(request, 'ekskursijos/user/GenreVotingPage.html', {
-        'excursion': excursion,
-        'playlist': playlist,
-        'genres_data': genres_data,
-        'role': role,
-    })
+    controller = VotingController(excursion, request.user)
+    return controller.handle_request(request)
 
 
 @login_required
@@ -95,21 +76,8 @@ def vote_for_genre(request, pk):
     if role != 'pupil':
         return JsonResponse({'status': 'error', 'message': 'Only pupils can vote.'}, status=403)
     
-    genre_id = request.POST.get('genre_id')
-    if not genre_id:
-        return JsonResponse({'status': 'error', 'message': 'Genre not provided.'}, status=400)
-    
-    try:
-        genre_id = int(genre_id)
-    except ValueError:
-        return JsonResponse({'status': 'error', 'message': 'Invalid genre ID.'}, status=400)
-    
-    playlist = get_object_or_404(Playlist, excursion=excursion)
-    controller = VotingController(playlist, request.user)
-    result = controller.voteForGenre(genre_id)
-    
-    status_code = 200 if result['status'] == 'success' else 400
-    return JsonResponse(result, status=status_code)
+    controller = VotingController(excursion, request.user)
+    return controller.handle_request(request)
 
 
 @login_required
@@ -242,7 +210,7 @@ def openExcursionPlaylist(request, pk):
     playlist = get_object_or_404(Playlist, excursion=excursion)
     
     controller = PlaylistController(playlist)
-    context = controller.get_playlist_display_data()
+    context = controller.getPlaylistData()
     context['role'] = role
 
     return render(request, 'ekskursijos/user/playlistPage.html', context)
