@@ -52,10 +52,6 @@ class PlaylistController:
         self.best_solution = []
         self.best_cost = float('inf')
 
-    # 1
-    def getPlaylistID(self):
-        return self.playlist.id
-
     # 5
     def checkGenreVotes(self, votes):
         return any(v.vote_count > 0 for v in votes)
@@ -605,19 +601,16 @@ def generate_playlist(request, pk):
         return redirect('ExcursionPage', pk=pk)
 
     playlist = get_object_or_404(Playlist, excursion__pk=pk)
-    excursion = playlist.excursion
+  #  excursion = playlist.excursion
     controller = PlaylistController(playlist)
 
     try:
-        # inline controller.generate()
-        controller.getPlaylistID()
         votes = controller.getVotes()
-        all_genres = list(Genre.objects.all())
+        #all_genres = list(Genre.objects.all())
         if controller.checkGenreVotes(votes):
             controller.setMostVotedAsFavourite(votes)
         else:
             controller.setHeavyMetalAsFavourite()
-        controller.getExcursionID()
         controller.getExcursionPlaces()
         controller.getExcursionPlaceTypes()
         controller.getAllGenrePrices()
