@@ -332,6 +332,11 @@ class PlaylistController:
         self.playlist.creation_date = timezone.now().date()
         self.playlist.save(update_fields=['creation_date'])
 
+    def editSongOrder(self):
+        max_order_result = PlaylistItem.objects.filter(playlist=self.playlist).aggregate(max_order=Max('order'))
+        max_order = max_order_result['max_order'] if max_order_result['max_order'] is not None else 0
+        return max_order + 1
+
     # votes resolver
     def getVotes(self):
         return list(PlaylistGenre.objects.filter(playlist=self.playlist).select_related('genre'))
@@ -464,9 +469,7 @@ def openPlaylistItemAddPage(request, pk):
             duration=duration_sec
         )
 
-        max_order_result = PlaylistItem.objects.filter(playlist=playlist).aggregate(max_order=Max('order'))
-        max_order = max_order_result['max_order'] if max_order_result['max_order'] is not None else 0
-        new_order = max_order + 1
+        new_order = controller.editSongOrder()
 
         PlaylistItem.objects.create(
             playlist=playlist,
@@ -499,7 +502,6 @@ def deletePlaylistItem(request, pk, item_id):
     playlist = get_object_or_404(Playlist, excursion__pk=pk)
     controller = PlaylistController(playlist)
     try:
-        # inline controller.deletePlaylistItem(item_id)
         playlist_item = get_object_or_404(PlaylistItem, pk=item_id, playlist=playlist)
         song = playlist_item.song
         playlist_item.delete()

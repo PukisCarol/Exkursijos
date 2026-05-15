@@ -24,10 +24,6 @@ class VotingController:
     def getPlaylistID(self):
         return self.playlist.id
 
-    # 7-8
-    def getVotedGenres(self):
-        return list(PlaylistGenre.objects.filter(playlist=self.playlist).select_related('genre'))
-
     # 9-10
     def getPupilID(self):
         return self.pupil.id
@@ -71,10 +67,7 @@ class VotingController:
         }
 
 
-# ============================================================
-#  Route handlers  (one function per URL, inline logic)
-# ============================================================
-
+# routes
 @login_required
 def openGenreVotingPage(request, pk):
     excursion = get_object_or_404(Excursion, pk=pk)
@@ -101,7 +94,7 @@ def openGenreVotingPage(request, pk):
 
     # GET
     all_genres = list(Genre.objects.all())
-    voted_genres = controller.getVotedGenres()
+    voted_genres = list(PlaylistGenre.objects.filter(playlist=controller.playlist).select_related('genre'))
 
     genres_data = []
     for genre in all_genres:
