@@ -3,12 +3,15 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.http import JsonResponse
-import json
+import json, traceback
 from .excursionEnrollment import getAllExcursionParticipants
-from ...models.models import Excursion, Profile, ExcursionEnrollment
+from ...models.models import Excursion, Profile, ExcursionEnrollment, Playlist
 from ...forms import ExcursionForm, PublishExcursionForm
 from .voting_controller import VotingController
 from .playlist_controller import PlaylistController
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def checkRole(user):
@@ -200,20 +203,38 @@ def mainPage(request):
 
 @login_required
 def openExcursionPlaylist(request, pk):
-    excursion = get_object_or_404(Excursion, pk=pk)
-    role = checkRole(request.user)
+    try:
+        logger.error("[PLAYLIST] START - pk=%s", pk)
+        excursion = get_object_or_404(Excursion, pk=pk)
+        logger.error("[PLAYLIST] Got excursion: %s", excursion.id)
+        
+        role = checkRole(request.user)
+        logger.error("[PLAYLIST] Got role: %s", role)
 
-    if role not in ['teacher', 'pupil']:
-        messages.error(request, 'You do not have access to this playlist.')
-        return redirect('excursionListPage')
+        if role not in ['teacher', 'pupil']:
+            logger.error("[PLAYLIST] Access denied for role: %s", role)
+            messages.error(request, 'You do not have access to this playlist.')
+            return redirect('excursionListPage')
 
-    playlist = get_object_or_404(Playlist, excursion=excursion)
-    
-    controller = PlaylistController(playlist)
-    context = controller.getPlaylistData()
-    context['role'] = role
+        logger.error("[PLAYLIST] Getting playlist for excursion %s", excursion.id)
+        playlist = get_object_or_404(Playlist, excursion=excursion)
+        logger.error("[PLAYLIST] Got playlist: %s", playlist.id)
 
-    return render(request, 'ekskursijos/user/playlistPage.html', context)
+        logger.error("[PLAYLIST] Creating controller...")
+        controller = PlaylistController(playlist)
+        logger.error("[PLAYLIST] Controller created")
+
+        logger.error("[PLAYLIST] Calling getPlaylistData...")
+        context = controller.getPlaylistData()
+        logger.error("[PLAYLIST] Got context with %d songs", len(context.get('songs', [])))
+
+        context['role'] = role
+        logger.error("[PLAYLIST] Rendering template...")
+        return render(request, 'ekskursijos/user/playlistPage.html', context)
+
+    except Exception:
+        logger.error("[PLAYLIST] EXCEPTION:\n%s", traceback.format_exc())
+        raise
 
 
 @login_required
@@ -308,11 +329,6 @@ def changePlaylistItemPlace(request, pk):
     if not item_id or not new_order:
         return JsonResponse({'success': False, 'error': 'Missing item_id or new_order.'})
 
-    try:
-        new_order = int(new_order)
-    except ValueError:
-        return JsonResponse({'success': False, 'error': 'Invalid order number.'})
-
     playlist = get_object_or_404(Playlist, excursion=excursion)
     controller = PlaylistController(playlist)
     
@@ -320,9 +336,11 @@ def changePlaylistItemPlace(request, pk):
         updated_items = controller.changePlaylistItemPlace(item_id, new_order)
         return JsonResponse({'success': True, 'items': updated_items})
     except ValueError as e:
+        logger.error("[CHANGE_ORDER] ValueError: %s", str(e))
         return JsonResponse({'success': False, 'error': str(e)})
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+        logger.error("[CHANGE_ORDER] Exception: %s\n%s", str(e), traceback.format_exc())
+        return JsonResponse({'success': False, 'error': f'Server error: {str(e)}'})
 
 
 @login_required

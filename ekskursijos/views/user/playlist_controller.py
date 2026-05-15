@@ -1,5 +1,7 @@
 import random
 import math
+import traceback
+import logging
 from django.utils import timezone
 from django.db import transaction
 from django.db.models import Max
@@ -9,6 +11,8 @@ from ...models.models import (
     Playlist, Excursion, ListOfPlaces, ObjectAddressProgress,
     Genre, PlaylistGenre, GenrePrice, Song, PlaylistItem, Place, PlaceType
 )
+
+logger = logging.getLogger(__name__)
 
 
 class PlaylistController:
@@ -324,6 +328,10 @@ class PlaylistController:
         self.playlist.creation_date = timezone.now().date()
         self.playlist.save(update_fields=['creation_date'])
 
+    # votes resolver
+    def getVotes(self):
+        return list(PlaylistGenre.objects.filter(playlist=self.playlist).select_related('genre'))
+
     def getPlaylistData(self):
         playlist_items = PlaylistItem.objects.filter(playlist=self.playlist).select_related('song').order_by('order')
         
@@ -412,15 +420,18 @@ class PlaylistController:
         PlaylistItem.objects.bulk_update(remaining_items, ['order'])
         self.recountItemStartTimes()
 
-    def changePlaylistItemPlace(self, item_id, new_order):
-        current_item = PlaylistItem.objects.get(pk=item_id, playlist=self.playlist)
+    def reorderItems(self, items, item_id, new_order):
+        """
+        Reorder playlist items by moving item_id to new_order position.
+        Returns updated item_dict with correct order values.
+        """
+        # Set all items to temporary negative orders to avoid constraint conflicts
+        for idx, item in enumerate(items):
+            item.order = -(idx + 1)
+        PlaylistItem.objects.bulk_update(items, ['order'])
+        
+        # Now rebuild the correct order
         items = list(PlaylistItem.objects.filter(playlist=self.playlist).order_by('order'))
-        total_items = len(items)
-        
-        if new_order < 1 or new_order > total_items:
-            raise ValueError(f'Reikšmės turi būti tarp {total_items}.')
-        
-        # Reorder in memory
         item_dict = {item.id: item for item in items}
         position_ids = [item.id for item in items]
         position_ids.remove(item_id)
@@ -429,9 +440,34 @@ class PlaylistController:
         for idx, pid in enumerate(position_ids, start=1):
             item_dict[pid].order = idx
         
-        PlaylistItem.objects.bulk_update(items, ['order'])
+        PlaylistItem.objects.bulk_update(list(item_dict.values()), ['order'])
+        return item_dict
+
+    def changePlaylistItemPlace(self, item_id, new_order):
+        try:
+            item_id = int(item_id)
+            new_order = int(new_order)
+        except (ValueError, TypeError):
+            raise ValueError('Invalid item_id or new_order format')
+        
+        current_item = PlaylistItem.objects.get(pk=item_id, playlist=self.playlist)
+        items = list(PlaylistItem.objects.filter(playlist=self.playlist).order_by('order'))
+        total_items = len(items)
+        
+        if new_order < 1 or new_order > total_items:
+            raise ValueError(f'Reikšmės turi būti tarp {total_items}.')
+        
+        if item_id not in [item.id for item in items]:
+            raise ValueError(f'Item {item_id} not found in playlist')
+        
+        with transaction.atomic():
+            item_dict = self.reorderItems(items, item_id, new_order)
+        
         self.recountItemStartTimes()
         
+        items = list(PlaylistItem.objects.filter(playlist=self.playlist).order_by('order'))
+        item_dict = {item.id: item for item in items}
+        position_ids = [item.id for item in items]
         return [self._item_to_dict(item_dict[pid]) for pid in position_ids]
 
     def _item_to_dict(self, item):
@@ -449,71 +485,76 @@ class PlaylistController:
 
     # generavimas
     def generate(self):
-        # 1-9
-        self.getPlaylistID()
-        votes = self.getVotes()
-        all_genres = list(Genre.objects.all())
-        if self.checkGenreVotes(votes):
-            self.setMostVotedAsFavourite(votes)
-        else:
-            self.setHeavyMetalAsFavourite()
-        self.getExcursionID()
-        self.getExcursionPlaces()
-        self.getExcursionPlaceTypes()
-        self.getAllGenrePrices()
+        try:
+            # 1-9
+            self.getPlaylistID()
+            votes = self.getVotes()
+            all_genres = list(Genre.objects.all())
+            if self.checkGenreVotes(votes):
+                self.setMostVotedAsFavourite(votes)
+            else:
+                self.setHeavyMetalAsFavourite()
+            self.getExcursionID()
+            self.getExcursionPlaces()
+            self.getExcursionPlaceTypes()
+            self.getAllGenrePrices()
 
-        # 20-21
-        self.unprocessed_places = self.places[:]
-        while self.unprocessed_places:
-            place = self.unprocessed_places.pop(0)
-            genres = self.getPlaceGenres(place)
-            self.place_genres.append(genres)
-            self.markPlaceProcessed(place)
+            # 20-21
+            self.unprocessed_places = self.places[:]
+            while self.unprocessed_places:
+                place = self.unprocessed_places.pop(0)
+                genres = self.getPlaceGenres(place)
+                self.place_genres.append(genres)
+                self.markPlaceProcessed(place)
 
-        # 22-23
-        start_sec, end_sec = self.getExcursionStartAndEnd()
+            # 22-23
+            start_sec, end_sec = self.getExcursionStartAndEnd()
 
-        # 24
-        self.N = self.findRequiredSongsCount(start_sec, end_sec)
+            # 24
+            self.N = self.findRequiredSongsCount(start_sec, end_sec)
 
-        # 25-28
-        raw_songs = self.getRandomSongs(self.N * 10)
-        self.songs = self.filterRequiredSongCount(raw_songs, self.N)
+            # 25-28
+            raw_songs = self.getRandomSongs(self.N * 10)
+            self.songs = self.filterRequiredSongCount(raw_songs, self.N)
 
-        # 30
-        self.getRelevantSongPrices()
+            # 30
+            self.getRelevantSongPrices()
 
-        # 32
-        self.findSmallestPriceForEachSongCombination()
+            # 32
+            self.findSmallestPriceForEachSongCombination()
 
-        # 31-33
-        initial_perm = self.createRandomSolution()
-        start_cost = self.findStartingPrice(initial_perm)
-        self.setCurrentSolution(initial_perm, start_cost)
-        self.best_solution = initial_perm.copy()
-        self.best_cost = start_cost
+            # 31-33
+            initial_perm = self.createRandomSolution()
+            start_cost = self.findStartingPrice(initial_perm)
+            self.setCurrentSolution(initial_perm, start_cost)
+            self.best_solution = initial_perm.copy()
+            self.best_cost = start_cost
 
-        self.setStartingSAParameters()
+            self.setStartingSAParameters()
 
-        if self.N > 1:
-            while self.T > self.Tmin and self.iteration < self.max_iter:
-                neighbor = self.generateNeighbor(self.current_solution)
-                cost = self.calculateCost(neighbor)
-                delta = cost - self.current_cost
-                if delta < 0:
-                    self.setCurrentSolution(neighbor, cost)
-                    self.saveAsTempBest(neighbor, cost)
-                else:
-                    if self.decideWhetherToTakeSolution(delta):
+            if self.N > 1:
+                while self.T > self.Tmin and self.iteration < self.max_iter:
+                    neighbor = self.generateNeighbor(self.current_solution)
+                    cost = self.calculateCost(neighbor)
+                    delta = cost - self.current_cost
+                    if delta < 0:
                         self.setCurrentSolution(neighbor, cost)
-                if self.iteration > 0 and self.iteration % self.iterations_at_min_temp == 0:
-                    self.decreaseTemperature()
-                self.incrementCurrentIterations()
+                        self.saveAsTempBest(neighbor, cost)
+                    else:
+                        if self.decideWhetherToTakeSolution(delta):
+                            self.setCurrentSolution(neighbor, cost)
+                    if self.iteration > 0 and self.iteration % self.iterations_at_min_temp == 0:
+                        self.decreaseTemperature()
+                    self.incrementCurrentIterations()
 
-        with transaction.atomic():
-            self.deleteCurrentItems()
-            self.bulk_create_songs_and_items()
-            self.recountItemStartTimes()
-            self.updateCreationDate()
+            with transaction.atomic():
+                self.deleteCurrentItems()
+                self.bulk_create_songs_and_items()
+                self.recountItemStartTimes()
+                self.updateCreationDate()
 
-        return self.playlist
+            return self.playlist
+
+        except Exception:
+            logger.error("PlaylistController.generate() FAILED:\n%s", traceback.format_exc())
+            raise
