@@ -36,6 +36,13 @@ from .views.pupil.pupilItem import (
 from .views.user.login import authenticateLoginInfo
 from .views.teacher.collectionRoute import openViewCollectionRoutePage
 from .views.teacher.pupilController import openAdministratePickupAddressesPage, openDeletePickupAddressesPage, openCreateCollectionRoutePage, openPickupAddressPage, openEditPickupAddressPage
+from .views.teacher.objectController import (
+    openObjectsList,
+    openNewObjectPage,
+    submitAddress,
+    saveCriteria,
+    saveObligatory,
+)
 
 urlpatterns = [
     path('', mainPage, name='mainPage'),
@@ -69,4 +76,9 @@ urlpatterns = [
     path('CreateCollectionRoute/<int:pk>/', openCreateCollectionRoutePage, name='CreateCollectionRoute'),
     path('PickupAddressPage/<int:pk>/', openPickupAddressPage, name='PickupAddressPage'),
     path('EditPickupAddress/<int:pk>/<int:pupil_id>/', openEditPickupAddressPage, name='EditPickupAddress'),
+    path('ObjectPage/<int:pk>/', openObjectsList, name='ObjectPage'),
+    path('NewObjectPage/<int:pk>/', openNewObjectPage, name='NewObjectPage'),
+    path('NewObjectPage/<int:pk>/submitAddress/', submitAddress, name='submitAddress'),
+    path('NewObjectPage/<int:pk>/saveCriteria/', saveCriteria, name='saveCriteria'),
+    path('NewObjectPage/<int:pk>/saveObligatory/', saveObligatory, name='saveObligatory'),
 ]

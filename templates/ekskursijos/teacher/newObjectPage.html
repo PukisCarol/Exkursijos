@@ -1,0 +1,126 @@
+{% extends 'ekskursijos/user/basePage.html' %}
+{% block title %}Pridėti naujas vietas{% endblock %}
+{% block content %}
+<h1 class="h1">Pridėti naujas vietas</h1>
+
+<div class="card">
+    <p class="mb-2"><strong>Ekskursija:</strong> {{ excursion.name }}</p>
+
+    {% if step == 'address' %}
+    <h2 class="mb-1">Įveskite adresus</h2>
+    <form method="post" action="{% url 'submitAddress' excursion.pk %}">
+        {% csrf_token %}
+        {{ address_formset.management_form }}
+        {% for form in address_formset %}
+        <div class="d-grid gap-65 max-w-420 mb-2">
+            <h4 class="mt-0 mb-05">Vieta {{ forloop.counter }}</h4>
+            {% for field in form %}
+            <div class="form-group">
+                <label>{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                <p class="error">{{ field.errors }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+        <div class="flex gap-1 mt-2">
+            <button type="submit" class="btn btn-green">Toliau</button>
+            <a href="{% url 'ObjectPage' excursion.pk %}" class="btn btn-gray">Atšaukti</a>
+        </div>
+    </form>
+
+    {% elif step == 'criteria' %}
+    {% if objects %}
+    <h3 class="mb-1">Išsaugoti adresai:</h3>
+    <ul class="mb-2">
+        {% for obj in objects %}
+        <li>{{ obj.name }} ({{ obj.latitude|floatformat:5 }}, {{ obj.longitude|floatformat:5 }})</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <h2 class="mb-1">Įveskite kriterijus</h2>
+    <form method="post" action="{% url 'saveCriteria' excursion.pk %}">
+        {% csrf_token %}
+        <div class="d-grid gap-65 max-w-420">
+            {% for field in criteria_form %}
+            <div class="form-group">
+                <label>{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                <p class="error">{{ field.errors }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="flex gap-1 mt-2">
+            <button type="submit" class="btn btn-green">Gauti rekomendacijas</button>
+            <a href="{% url 'ObjectPage' excursion.pk %}" class="btn btn-gray">Atšaukti</a>
+        </div>
+    </form>
+
+    {% elif step == 'result' %}
+    <h2 class="mb-1">Galutinis vietų sąrašas</h2>
+
+    {% if objects %}
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nr.</th>
+                    <th>Pavadinimas</th>
+                    <th>Platuma</th>
+                    <th>Ilguma</th>
+                    <th>Privaloma</th>
+                    <th>Veiksmas</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for place in objects %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ place.name }}</td>
+                    <td>{{ place.latitude|floatformat:5 }}</td>
+                    <td>{{ place.longitude|floatformat:5 }}</td>
+                    <td>
+                        {% if place.pk in obligatory_ids %}
+                            <span class="badge badge-green">Taip</span>
+                        {% else %}
+                            <span class="badge badge-gray">Ne</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if place.pk in obligatory_ids %}
+                        <form method="post" action="{% url 'saveObligatory' excursion.pk %}" class="d-inline-block">
+                            {% csrf_token %}
+                            <input type="hidden" name="place_id" value="{{ place.pk }}">
+                            <input type="hidden" name="is_obligatory" value="false">
+                            <button type="submit" class="btn btn-sm btn-gray">Atžymėti</button>
+                        </form>
+                        {% else %}
+                        <form method="post" action="{% url 'saveObligatory' excursion.pk %}" class="d-inline-block">
+                            {% csrf_token %}
+                            <input type="hidden" name="place_id" value="{{ place.pk }}">
+                            <input type="hidden" name="is_obligatory" value="true">
+                            <button type="submit" class="btn btn-sm btn-green">Pažymėti privalomą</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="mb-2">Pagal nurodytus kriterijus vietų nerasta.</p>
+    {% endif %}
+
+    <div class="mt-2">
+        <a href="{% url 'ObjectPage' excursion.pk %}" class="btn btn-green">Peržiūrėti vietų sąrašą</a>
+        <a href="{% url 'NewObjectPage' excursion.pk %}" class="btn btn-gray">Pridėti daugiau</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

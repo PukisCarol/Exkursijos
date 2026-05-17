@@ -164,6 +164,7 @@ class ObjectAddressProgress(models.Model):
     place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='address_progresses')
     visit_number = models.IntegerField()
     duration_minutes = models.IntegerField()
+    is_obligatory = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('list_of_places', 'place')

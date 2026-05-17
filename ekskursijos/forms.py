@@ -1,5 +1,6 @@
 from django import forms
-from .models.models import Excursion, SharedBackpackItem, Item
+from django.forms import formset_factory
+from .models.models import Excursion, SharedBackpackItem, Item, Place, PlaceType
 
 class ExcursionForm(forms.ModelForm):
     class Meta:
@@ -39,3 +40,31 @@ class SharedBackpackItemForm(forms.ModelForm):
             if self.instance and self.instance.pk:
                 queryset = queryset | Item.objects.filter(pk=self.instance.item_id)
             self.fields['item'].queryset = queryset.distinct()
+
+
+class AddressForm(forms.Form):
+    name = forms.CharField(max_length=200, label='Vietos pavadinimas')
+    address_text = forms.CharField(max_length=500, label='Adresas')
+
+
+AddressFormSet = formset_factory(AddressForm, extra=1, max_num=10)
+
+
+class CriteriaForm(forms.Form):
+    max_places = forms.IntegerField(min_value=1, max_value=50, label='Maks. naujų vietų skaičius')
+    place_types = forms.ModelMultipleChoiceField(
+        queryset=PlaceType.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        label='Vietų tipai',
+        required=False,
+    )
+
+
+class EditPlaceForm(forms.ModelForm):
+    class Meta:
+        model = Place
+        fields = ['name', 'longitude', 'latitude']
+        widgets = {
+            'longitude': forms.NumberInput(attrs={'step': 'any'}),
+            'latitude': forms.NumberInput(attrs={'step': 'any'}),
+        }

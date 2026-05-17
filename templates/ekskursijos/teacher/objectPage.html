@@ -1,0 +1,87 @@
+{% extends 'ekskursijos/user/basePage.html' %}
+{% block title %}Vietų sąrašas{% endblock %}
+{% block content %}
+<h1 class="h1">Rekomenduojamų vietų sąrašas</h1>
+
+<div class="card">
+    <p class="mb-2"><strong>Ekskursija:</strong> {{ excursion.name }}</p>
+    <p class="mb-2"><strong>Vietų skaičius:</strong> {{ capacity }}</p>
+
+    {% if objects %}
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nr.</th>
+                        <th>Pavadinimas</th>
+                        <th>Platuma</th>
+                        <th>Ilguma</th>
+                        <th>Veiksmai</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for place in objects %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ place.name }}</td>
+                        <td>{{ place.latitude }}</td>
+                        <td>{{ place.longitude }}</td>
+                        <td class="text-nowrap">
+                            <a href="{% url 'ObjectPage' excursion.pk %}?edit={{ place.pk }}" class="btn btn-sm btn-gray">Redaguoti</a>
+                            <a href="{% url 'ObjectPage' excursion.pk %}?confirm={{ place.pk }}" class="btn btn-sm btn-red">Šalinti</a>
+                        </td>
+                    </tr>
+                    {% if edit_place_id == place.pk %}
+                    <tr>
+                        <td colspan="5">
+                            <h3 class="mt-1 mb-1">Redaguoti vietą</h3>
+                            <form method="post" action="{% url 'ObjectPage' excursion.pk %}" class="d-grid gap-65 max-w-420">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="save_edit">
+                                <input type="hidden" name="place_id" value="{{ place.pk }}">
+                                {{ edit_form.as_p }}
+                                <div class="flex gap-1">
+                                    <button type="submit" class="btn btn-green">Išsaugoti</button>
+                                    <a href="{% url 'ObjectPage' excursion.pk %}" class="btn btn-gray">Atšaukti</a>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% if confirm_delete_id == place.pk %}
+                    <tr>
+                        <td colspan="5">
+                            <div class="card alert mb-2 bg-warning border-warning">
+                                <h3 class="mt-0">Patvirtinti šalinimą</h3>
+                                <p class="mb-2">Ar tikrai norite pašalinti <strong>{{ place_to_delete.name }}</strong>?</p>
+                                <div class="flex gap-1">
+                                    <form method="post" action="{% url 'ObjectPage' excursion.pk %}" class="d-inline-block">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="confirm_delete">
+                                        <input type="hidden" name="place_id" value="{{ place.pk }}">
+                                        <button type="submit" class="btn btn-red">Taip, šalinti</button>
+                                    </form>
+                                    <form method="post" action="{% url 'ObjectPage' excursion.pk %}" class="d-inline-block">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="decline_delete">
+                                        <button type="submit" class="btn btn-gray">Atšaukti</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="mb-2">Vietų sąrašas tuščias.</p>
+    {% endif %}
+
+    <div class="mt-2">
+        <a href="{% url 'NewObjectPage' excursion.pk %}" class="btn btn-green">Pridėti naujas vietas</a>
+        <a href="{% url 'ExcursionPage' excursion.pk %}" class="btn btn-gray">← Grįžti</a>
+    </div>
+</div>
+{% endblock %}
