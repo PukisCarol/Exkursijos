@@ -591,7 +591,7 @@ def changePlaylistItemPlace(request, pk):
 
 
 @login_required
-def generate_playlist(request, pk):
+def generatePlaylist(request, pk):
     if request.method != 'POST':
         messages.error(request, 'Invalid request method.')
         return redirect('ExcursionPage', pk=pk)

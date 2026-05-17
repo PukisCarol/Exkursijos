@@ -9,9 +9,6 @@ def _get_role(user):
     return user.profile.role if hasattr(user, 'profile') else None
 
 
-# ============================================================
-#  VotingController — helpers only (no route-handler logic)
-# ============================================================
 
 class VotingController:
 
@@ -19,10 +16,6 @@ class VotingController:
         self.excursion = excursion
         self.pupil = pupil
         self.playlist = get_object_or_404(Playlist, excursion=excursion)
-
-    # 3-4
-    def getPlaylistID(self):
-        return self.playlist.id
 
     # 9-10
     def getPupilID(self):
@@ -113,7 +106,7 @@ def openGenreVotingPage(request, pk):
 
 
 @login_required
-def vote_for_genre(request, pk):
+def voteForGenre(request, pk):
     excursion = get_object_or_404(Excursion, pk=pk)
     controller = VotingController(excursion, request.user)
 

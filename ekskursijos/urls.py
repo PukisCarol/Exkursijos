@@ -15,11 +15,11 @@ from .views.user.playlist_controller import (
     deletePlaylistItem,
     changePlaylistItemPlace,
     addSong,
-    generate_playlist,
+    generatePlaylist,
 )
 from .views.user.voting_controller import (
     openGenreVotingPage,
-    vote_for_genre,
+    voteForGenre,
 )
 from .views.teacher.teacherItem import (
     openTeacherItemLists,
@@ -42,7 +42,7 @@ urlpatterns = [
     path('excursionListPage/', getExcursionList, name='excursionListPage'),
     path('ExcursionPage/<int:pk>/', openExcursion, name='ExcursionPage'),
     path('ExcursionPage/<int:pk>/genreVoting/', openGenreVotingPage, name='genreVotingPage'),
-    path('ExcursionPage/<int:pk>/genreVoting/vote/', vote_for_genre, name='voteForGenre'),
+    path('ExcursionPage/<int:pk>/genreVoting/vote/', voteForGenre, name='voteForGenre'),
     path('PlaylistPage/<int:pk>/', openExcursionPlaylist, name='PlaylistPage'),
     path('PlaylistPage/<int:pk>/changePlace/', changePlaylistItemPlace, name='changePlaylistItemPlace'),
     path('PlaylistItemAddPage/<int:pk>/', openPlaylistItemAddPage, name='PlaylistItemAddPage'),
@@ -62,7 +62,7 @@ urlpatterns = [
     path('JoinExcursionPage/', openJoinExcursionPage, name='JoinExcursionPage'),
     path('<int:pk>/JoinExcursionPage/', authenticateLoginInfo, name='JoinExcursionPage'),
     path('<int:pk>/trinti/', deleteExcursion, name='deleteExcursion'),
-    path('PlaylistPage/<int:pk>/generate/', generate_playlist, name='generatePlaylist'),
+    path('PlaylistPage/<int:pk>/generate/', generatePlaylist, name='generatePlaylist'),
     path('ViewCollectionRoute/<int:pk>/', openViewCollectionRoutePage, name='ViewCollectionRoute'),
     path('AdministratePickupAddress/<int:pk>/', openAdministratePickupAddressesPage, name='AdministratePickupAddress'),
     path('DeletePickupAddresses/<int:pk>/', openDeletePickupAddressesPage, name='DeletePickupAddresses'),
