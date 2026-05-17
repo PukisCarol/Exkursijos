@@ -8,7 +8,7 @@ from .views.user.excursion import (
     openJoinExcursionPage,
     pupilsListPage,
 )
-from .views.user.playlist_controller import (
+from .views.user.playlistController import (
     openExcursionPlaylist,
     openPlaylistItemAddPage,
     searchSongs,
@@ -17,7 +17,7 @@ from .views.user.playlist_controller import (
     addSong,
     generatePlaylist,
 )
-from .views.user.voting_controller import (
+from .views.user.votingController import (
     openGenreVotingPage,
     voteForGenre,
 )

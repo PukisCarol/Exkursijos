@@ -498,9 +498,9 @@ def deletePlaylistItem(request, pk, item_id):
     playlist = get_object_or_404(Playlist, excursion__pk=pk)
     controller = PlaylistController(playlist)
     try:
-        playlist_item = get_object_or_404(PlaylistItem, pk=item_id, playlist=playlist)
-        song = playlist_item.song
-        playlist_item.delete()
+        playlistItem = get_object_or_404(PlaylistItem, pk=item_id, playlist=playlist)
+        song = playlistItem.song
+        playlistItem.delete()
         song.delete()
         remaining_items = list(PlaylistItem.objects.filter(playlist=playlist).order_by('order'))
         for idx, item in enumerate(remaining_items, start=1):
