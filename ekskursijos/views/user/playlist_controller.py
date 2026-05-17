@@ -76,29 +76,6 @@ class PlaylistController:
     def getExcursionID(self):
         return self.excursion.id
 
-    # 14
-    def getExcursionPlaces(self):
-        try:
-            lop = ListOfPlaces.objects.get(excursion=self.excursion)
-        except ListOfPlaces.DoesNotExist:
-            self.places = []
-            return self.places
-        progresses = ObjectAddressProgress.objects.filter(list_of_places=lop).select_related('place').order_by('visit_number')
-        self.places = [p.place for p in progresses]
-        return self.places
-
-    # 16
-    def getExcursionPlaceTypes(self):
-        if not self.places:
-            self.place_types = []
-            return self.place_types
-        self.place_types = list(PlaceType.objects.filter(places__in=self.places).distinct())
-        return self.place_types
-
-    # 18
-    def getAllGenrePrices(self):
-        return list(GenrePrice.objects.all())
-
     # 20
     def getPlaceGenres(self, place):
         return set(Genre.objects.filter(place_types__places=place).distinct())
@@ -332,10 +309,6 @@ class PlaylistController:
         max_order_result = PlaylistItem.objects.filter(playlist=self.playlist).aggregate(max_order=Max('order'))
         max_order = max_order_result['max_order'] if max_order_result['max_order'] is not None else 0
         return max_order + 1
-
-    # votes resolver
-    def getVotes(self):
-        return list(PlaylistGenre.objects.filter(playlist=self.playlist).select_related('genre'))
 
     def getBestSongMatches(self, query):
         if not query:
@@ -605,15 +578,22 @@ def generatePlaylist(request, pk):
     controller = PlaylistController(playlist)
 
     try:
-        votes = controller.getVotes()
-        #all_genres = list(Genre.objects.all())
+        votes = list(PlaylistGenre.objects.filter(playlist=controller.playlist).select_related('genre'))
         if controller.checkGenreVotes(votes):
             controller.setMostVotedAsFavourite(votes)
         else:
             controller.setHeavyMetalAsFavourite()
-        controller.getExcursionPlaces()
-        controller.getExcursionPlaceTypes()
-        controller.getAllGenrePrices()
+        try:
+            lop = ListOfPlaces.objects.get(excursion=controller.excursion)
+        except ListOfPlaces.DoesNotExist:
+            controller.places = []
+        else:
+            progresses = ObjectAddressProgress.objects.filter(list_of_places=lop).select_related('place').order_by('visit_number')
+            controller.places = [p.place for p in progresses]
+        if controller.places:
+            controller.place_types = list(PlaceType.objects.filter(places__in=controller.places).distinct())
+        else:
+            controller.place_types = []
 
         controller.unprocessed_places = controller.places[:]
         while controller.unprocessed_places:
