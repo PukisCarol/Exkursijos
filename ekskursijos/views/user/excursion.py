@@ -3,12 +3,13 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.http import JsonResponse
-import json
+import json, traceback
 from .excursionEnrollment import getAllExcursionParticipants
-from ...models.models import Excursion, Profile, ExcursionEnrollment, Playlist, Genre
+from ...models.models import Excursion, Profile, ExcursionEnrollment
 from ...forms import ExcursionForm, PublishExcursionForm
-from .voting_controller import VotingController
-from .playlist_controller import PlaylistController
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def checkRole(user):
@@ -52,64 +53,6 @@ def openExcursion(request, pk):
         'dalyviai': dalyviai,
         'forma': forma,
     })
-
-
-@login_required
-def openGenreVotingPage(request, pk):
-    excursion = get_object_or_404(Excursion, pk=pk)
-    role = checkRole(request.user)
-    if role != 'pupil':
-        messages.error(request, 'Only pupils can vote.')
-        return redirect('ExcursionPage', pk=pk)
-    
-    playlist = get_object_or_404(Playlist, excursion=excursion)
-    controller = VotingController(playlist, request.user)
-    
-    all_genres = list(Genre.objects.all())
-    voted_genres = controller.getVotedGenres()
-    
-    # Build list of genre data with vote count
-    genres_data = []
-    for genre in all_genres:
-        pg = next((g for g in voted_genres if g.genre.id == genre.id), None)
-        genres_data.append({
-            'genre': genre,
-            'vote_count': pg.vote_count if pg else 0,
-        })
-    
-    return render(request, 'ekskursijos/user/GenreVotingPage.html', {
-        'excursion': excursion,
-        'playlist': playlist,
-        'genres_data': genres_data,
-        'role': role,
-    })
-
-
-@login_required
-def vote_for_genre(request, pk):
-    if request.method != 'POST':
-        return JsonResponse({'error': 'POST required'}, status=400)
-    
-    excursion = get_object_or_404(Excursion, pk=pk)
-    role = checkRole(request.user)
-    if role != 'pupil':
-        return JsonResponse({'status': 'error', 'message': 'Only pupils can vote.'}, status=403)
-    
-    genre_id = request.POST.get('genre_id')
-    if not genre_id:
-        return JsonResponse({'status': 'error', 'message': 'Genre not provided.'}, status=400)
-    
-    try:
-        genre_id = int(genre_id)
-    except ValueError:
-        return JsonResponse({'status': 'error', 'message': 'Invalid genre ID.'}, status=400)
-    
-    playlist = get_object_or_404(Playlist, excursion=excursion)
-    controller = VotingController(playlist, request.user)
-    result = controller.voteForGenre(genre_id)
-    
-    status_code = 200 if result['status'] == 'success' else 400
-    return JsonResponse(result, status=status_code)
 
 
 @login_required
@@ -228,148 +171,3 @@ def openJoinExcursionPage(request):
 
 def mainPage(request):
     return render(request, 'ekskursijos/user/mainPage.html')
-
-
-@login_required
-def openExcursionPlaylist(request, pk):
-    excursion = get_object_or_404(Excursion, pk=pk)
-    role = checkRole(request.user)
-
-    if role not in ['teacher', 'pupil']:
-        messages.error(request, 'You do not have access to this playlist.')
-        return redirect('excursionListPage')
-
-    playlist = get_object_or_404(Playlist, excursion=excursion)
-    
-    controller = PlaylistController(playlist)
-    context = controller.get_playlist_display_data()
-    context['role'] = role
-
-    return render(request, 'ekskursijos/user/playlistPage.html', context)
-
-
-@login_required
-def openPlaylistItemAddPage(request, pk):
-    excursion = get_object_or_404(Excursion, pk=pk)
-    role = checkRole(request.user)
-
-    if role != 'teacher':
-        messages.error(request, 'Only teachers can add songs to playlist.')
-        return redirect('ExcursionPage', pk=pk)
-
-    playlist = get_object_or_404(Playlist, excursion=excursion)
-    controller = PlaylistController(playlist)
-
-    if request.method == 'GET':
-        query = request.GET.get('q', '')
-        search_results = []
-        if query:
-            try:
-                search_results = controller.getBestSongMatches(query)
-            except Exception as e:
-                messages.error(request, str(e))
-
-        return render(request, 'ekskursijos/user/playlistItemAddPage.html', {
-            'excursion': excursion,
-            'playlist': playlist,
-            'role': role,
-            'search_results': search_results,
-            'query': query,
-        })
-
-    elif request.method == 'POST':
-        track_id = request.POST.get('track_id')
-        track_data_str = request.POST.get('track_data')
-
-        if not track_id and not track_data_str:
-            messages.error(request, 'No song selected.')
-            return redirect('PlaylistItemAddPage', pk=pk)
-
-        try:
-            if track_data_str:
-                track_data = json.loads(track_data_str)
-            else:
-                track_data = controller.getSongDetails(track_id)
-            
-            song = controller.addSong(track_data)
-            messages.success(request, f'Song "{song.title}" added to playlist.')
-        except Exception as e:
-            messages.error(request, str(e))
-            return redirect('PlaylistItemAddPage', pk=pk)
-
-        return redirect('PlaylistPage', pk=pk)
-
-
-@login_required
-def deletePlaylistItem(request, pk, item_id):
-    if request.method != 'POST':
-        return redirect('PlaylistPage', pk=pk)
-
-    excursion = get_object_or_404(Excursion, pk=pk)
-    role = checkRole(request.user)
-
-    if role != 'teacher':
-        messages.error(request, 'Only teachers can delete playlist items.')
-        return redirect('PlaylistPage', pk=pk)
-
-    playlist = get_object_or_404(Playlist, excursion=excursion)
-    controller = PlaylistController(playlist)
-    
-    try:
-        controller.deletePlaylistItem(item_id)
-    except Exception as e:
-        messages.error(request, str(e))
-
-    return redirect('PlaylistPage', pk=pk)
-
-
-@login_required
-def changePlaylistItemPlace(request, pk):
-    if request.method != 'POST':
-        return redirect('PlaylistPage', pk=pk)
-
-    excursion = get_object_or_404(Excursion, pk=pk)
-    role = checkRole(request.user)
-
-    if role != 'teacher':
-        return JsonResponse({'success': False, 'error': 'Only teachers can modify playlist order.'})
-
-    item_id = request.POST.get('item_id')
-    new_order = request.POST.get('new_order')
-
-    if not item_id or not new_order:
-        return JsonResponse({'success': False, 'error': 'Missing item_id or new_order.'})
-
-    try:
-        new_order = int(new_order)
-    except ValueError:
-        return JsonResponse({'success': False, 'error': 'Invalid order number.'})
-
-    playlist = get_object_or_404(Playlist, excursion=excursion)
-    controller = PlaylistController(playlist)
-    
-    try:
-        updated_items = controller.changePlaylistItemPlace(item_id, new_order)
-        return JsonResponse({'success': True, 'items': updated_items})
-    except ValueError as e:
-        return JsonResponse({'success': False, 'error': str(e)})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
-
-
-@login_required
-def generate_playlist(request, pk):
-    excursion = get_object_or_404(Excursion, pk=pk)
-    role = checkRole(request.user)
-    if role != 'teacher':
-        messages.error(request, 'Tik mokytojai gali generuoti grojaraščius.')
-        return redirect('ExcursionPage', pk=pk)
-    playlist = get_object_or_404(Playlist, excursion=excursion)
-    if request.method == 'POST':
-        try:
-            controller = PlaylistController(playlist)
-            controller.generate()
-        except Exception as e:
-            messages.error(request, f'Error: {str(e)}')
-        return redirect('PlaylistPage', pk=pk)
-    return redirect('ExcursionPage', pk=pk)

@@ -2,18 +2,24 @@ from django.urls import path
 from .views.user.excursion import (
     addExcursion,
     deleteExcursion,
-    deletePlaylistItem,
     getExcursionList,
     openExcursion,
     mainPage,
     openJoinExcursionPage,
     pupilsListPage,
+)
+from .views.user.playlistController import (
     openExcursionPlaylist,
     openPlaylistItemAddPage,
+    searchSongs,
+    deletePlaylistItem,
     changePlaylistItemPlace,
-    generate_playlist,
+    addSong,
+    generatePlaylist,
+)
+from .views.user.votingController import (
     openGenreVotingPage,
-    vote_for_genre,
+    voteForGenre,
 )
 from .views.teacher.teacherItem import (
     openTeacherItemLists,
@@ -36,10 +42,12 @@ urlpatterns = [
     path('excursionListPage/', getExcursionList, name='excursionListPage'),
     path('ExcursionPage/<int:pk>/', openExcursion, name='ExcursionPage'),
     path('ExcursionPage/<int:pk>/genreVoting/', openGenreVotingPage, name='genreVotingPage'),
-    path('ExcursionPage/<int:pk>/genreVoting/vote/', vote_for_genre, name='vote_for_genre'),
+    path('ExcursionPage/<int:pk>/genreVoting/vote/', voteForGenre, name='voteForGenre'),
     path('PlaylistPage/<int:pk>/', openExcursionPlaylist, name='PlaylistPage'),
     path('PlaylistPage/<int:pk>/changePlace/', changePlaylistItemPlace, name='changePlaylistItemPlace'),
     path('PlaylistItemAddPage/<int:pk>/', openPlaylistItemAddPage, name='PlaylistItemAddPage'),
+    path('PlaylistItemAddPage/<int:pk>/search/', searchSongs, name='searchSongs'),
+    path('PlaylistItemAddPage/<int:pk>/add/', addSong, name='addSong'),
     path('PlaylistItem/<int:pk>/<int:item_id>/delete/', deletePlaylistItem, name='deletePlaylistItem'),
     path('PupilsListPage/<int:pk>/', pupilsListPage, name='PupilsListPage'),
     path('TeacherItemPage/<int:pk>/', openTeacherItemLists, name='openTeacherItemLists'),
@@ -54,7 +62,7 @@ urlpatterns = [
     path('JoinExcursionPage/', openJoinExcursionPage, name='JoinExcursionPage'),
     path('<int:pk>/JoinExcursionPage/', authenticateLoginInfo, name='JoinExcursionPage'),
     path('<int:pk>/trinti/', deleteExcursion, name='deleteExcursion'),
-    path('PlaylistPage/<int:pk>/generate/', generate_playlist, name='generatePlaylist'),
+    path('PlaylistPage/<int:pk>/generate/', generatePlaylist, name='generatePlaylist'),
     path('ViewCollectionRoute/<int:pk>/', openViewCollectionRoutePage, name='ViewCollectionRoute'),
     path('AdministratePickupAddress/<int:pk>/', openAdministratePickupAddressesPage, name='AdministratePickupAddress'),
     path('DeletePickupAddresses/<int:pk>/', openDeletePickupAddressesPage, name='DeletePickupAddresses'),
