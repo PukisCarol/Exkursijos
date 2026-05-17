@@ -86,7 +86,7 @@
                 {{ form.as_p }}
                 <div class="flex gap-1">
                     <button type="submit" class="btn btn-green">Išsaugoti</button>
-                    <a href="{% url 'TeacherItemPage' excursion.pk %}" class="btn btn-gray">Atšaukti</a>
+                    <a href="{% url 'openTeacherItemLists' excursion.pk %}" class="btn btn-gray">Atšaukti</a>
                 </div>
             </form>
         {% elif add_mode %}
@@ -96,7 +96,7 @@
                 {{ form.as_p }}
                 <div class="flex gap-1">
                     <button type="submit" class="btn btn-green" {% if not form.fields.item.queryset %}disabled{% endif %}>Pridėti</button>
-                    <a href="{% url 'TeacherItemPage' excursion.pk %}" class="btn btn-gray">Atšaukti</a>
+                    <a href="{% url 'openTeacherItemLists' excursion.pk %}" class="btn btn-gray">Atšaukti</a>
                 </div>
             </form>
         {% endif %}

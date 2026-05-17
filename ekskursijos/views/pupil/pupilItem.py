@@ -123,7 +123,7 @@ def saveItems(request, excursion, pupil_items):
 
 
 @login_required
-def openPupilItemList(request, pk):
+def openPupilItemLists(request, pk):
     """Open the pupil item list page for an excursion."""
     role = checkRole(request.user)
     if role != 'pupil':

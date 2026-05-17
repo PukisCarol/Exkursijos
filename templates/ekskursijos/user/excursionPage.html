@@ -39,7 +39,7 @@
 <div class="mt-2">
     <a href="{% url 'PupilsListPage' ekskursija.pk %}" class="btn btn-green">Peržiūrėti užsiregistravusių sąrašą</a>
     <a href="{% url 'ViewCollectionRoute' ekskursija.pk %}" class="btn btn-green">Peržiūrėti surinkimo maršrutą</a>
-    <a href="{% url 'TeacherItemPage' ekskursija.pk %}" class="btn btn-green">Administruoti daiktų sąrašą</a>
+    <a href="{% url 'openTeacherItemLists' ekskursija.pk %}" class="btn btn-green">Administruoti daiktų sąrašą</a>
     <a href="{% url 'PlaylistPage' ekskursija.pk %}" class="btn btn-green">Peržiūrėti grojaraštį</a>
     <label for="delete-modal-toggle" class="btn btn-red">Trinti</label>
     <a href="{% url 'excursionListPage' %}" class="btn btn-gray">← Grįžti</a>
@@ -67,7 +67,7 @@
     <a href="{% url 'PickupAddressPage' ekskursija.pk %}" class="btn btn-green">Redaguoti paėmimo adresą</a>
     <a href="{% url 'genreVotingPage' ekskursija.pk %}" class="btn btn-green">Balsuoti už žanrus</a>
     <a href="{% url 'PlaylistPage' ekskursija.pk %}" class="btn btn-green">Peržiūrėti grojaraštį</a>
-    <a href="{% url 'openPupilItemList' ekskursija.pk %}" class="btn btn-green">Valdyti rekomenduojamus daiktus</a>
+    <a href="{% url 'openPupilItemLists' ekskursija.pk %}" class="btn btn-green">Valdyti rekomenduojamus daiktus</a>
     <a href="{% url 'excursionListPage' %}" class="btn btn-gray">← Grįžti</a>
 </div>
 
