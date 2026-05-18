@@ -51,6 +51,7 @@ class PlaylistController:
         self.current_cost = 0.0
         self.best_solution = []
         self.best_cost = float('inf')
+        self.playlistGenres = {}
 
     def checkGenreVotes(self, votes):
         return any(v.vote_count > 0 for v in votes)
@@ -144,14 +145,12 @@ class PlaylistController:
     def filterRequiredSongCount(self, raw_songs, count):
         filtered = []
         for track in raw_songs:
-            genre_name = track.get('primary_genre_name', '').strip()
-            if not genre_name:
+            genreName = track.get('primary_genre_name', '').strip()
+            if not genreName:
                 continue
-            try:
-                genre_obj = Genre.objects.get(name__iexact=genre_name)
+            genre_obj = self.playlistGenres.get(genreName.lower())
+            if genre_obj:
                 filtered.append({'track': track, 'genre': genre_obj})
-            except Genre.DoesNotExist:
-                continue
         if len(filtered) < count:
             raise ValueError(f"Not enough songs with known genres: found {len(filtered)}, required {count}")
         return random.sample(filtered, count)
@@ -258,7 +257,7 @@ class PlaylistController:
         PlaylistItem.objects.filter(playlist=self.playlist).delete()
 
     # 46,48
-    def bulk_create_songs_and_items(self):
+    def bulkCreateSongsAndItems(self):
         ordered_data = [self.songs[i] for i in self.best_solution]
         song_objs = []
         for data in ordered_data:
@@ -576,6 +575,7 @@ def generatePlaylist(request, pk):
 
     try:
         votes = list(PlaylistGenre.objects.filter(playlist=controller.playlist).select_related('genre'))
+        controller.playlistGenres = {g.name.lower(): g for g in Genre.objects.all()}
         if controller.checkGenreVotes(votes):
             controller.setMostVotedAsFavourite(votes)
         else:
@@ -606,11 +606,10 @@ def generatePlaylist(request, pk):
         controller.getRelevantSongPrices()
         controller.findSmallestPriceForEachSongCombination()
 
-        initial_perm = controller.createRandomSolution()
-        start_cost = controller.findStartingPrice(initial_perm)
-        controller.setCurrentSolution(initial_perm, start_cost)
-        controller.best_solution = initial_perm.copy()
-        controller.best_cost = start_cost
+        initialSolution = controller.createRandomSolution()
+        start_cost = controller.findStartingPrice(initialSolution)
+        controller.setCurrentSolution(initialSolution, start_cost)
+        controller.saveAsTempBest(initialSolution, start_cost)
         controller.setStartingSAParameters()
 
         if controller.N > 1:
@@ -630,7 +629,7 @@ def generatePlaylist(request, pk):
 
         with transaction.atomic():
             controller.deleteCurrentItems()
-            controller.bulk_create_songs_and_items()
+            controller.bulkCreateSongsAndItems()
             controller.recountItemStartTimes()
             controller.updateCreationDate()
     except Exception as e:
