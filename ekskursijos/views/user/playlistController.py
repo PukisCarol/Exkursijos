@@ -52,11 +52,9 @@ class PlaylistController:
         self.best_solution = []
         self.best_cost = float('inf')
 
-    # 5
     def checkGenreVotes(self, votes):
         return any(v.vote_count > 0 for v in votes)
 
-    # 6/7
     def setMostVotedAsFavourite(self, votes):
         if not votes:
             return self.setHeavyMetalAsFavourite()
@@ -64,7 +62,7 @@ class PlaylistController:
         self.favorite_genre = best.genre
         return self.favorite_genre
 
-    # 6/11
+
     def setHeavyMetalAsFavourite(self):
         genre = Genre.objects.filter(name__iexact='Heavy Metal').first()
         if not genre:
@@ -574,7 +572,6 @@ def generatePlaylist(request, pk):
         return redirect('ExcursionPage', pk=pk)
 
     playlist = get_object_or_404(Playlist, excursion__pk=pk)
-  #  excursion = playlist.excursion
     controller = PlaylistController(playlist)
 
     try:
@@ -584,11 +581,11 @@ def generatePlaylist(request, pk):
         else:
             controller.setHeavyMetalAsFavourite()
         try:
-            lop = ListOfPlaces.objects.get(excursion=controller.excursion)
+            listOfPlaces = ListOfPlaces.objects.get(excursion=controller.excursion)
         except ListOfPlaces.DoesNotExist:
             controller.places = []
         else:
-            progresses = ObjectAddressProgress.objects.filter(list_of_places=lop).select_related('place').order_by('visit_number')
+            progresses = ObjectAddressProgress.objects.filter(list_of_places=listOfPlaces).select_related('place').order_by('visit_number')
             controller.places = [p.place for p in progresses]
         if controller.places:
             controller.place_types = list(PlaceType.objects.filter(places__in=controller.places).distinct())
