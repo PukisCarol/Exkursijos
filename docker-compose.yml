@@ -5,12 +5,15 @@ services:
     expose:
       - "8000"
     volumes:
+      - .:/app
+      - /app/.venv/
       - static_volume:/static
       - media_volume:/media
     env_file:
       - .env
     depends_on:
       - db
+    command: /app/.venv/bin/python manage.py runserver 0.0.0.0:8000
 
   nginx:
     image: nginx:alpine

@@ -27,6 +27,8 @@ from ekskursijos.models.models import (
 )
 import random
 
+from ekskursijos.services.routeToAPI import RouteToAPI
+
 class Command(BaseCommand):
     help = 'Populates the database with test data'
 
@@ -195,8 +197,8 @@ class Command(BaseCommand):
         for i in range(1, 6):
             exc = Excursion.objects.create(
                 name=f'Excursion {i}',
-                start_date=timezone.now().date() + timezone.timedelta(days=i*10),
-                end_date=timezone.now().date() + timezone.timedelta(days=i*10 + 1),
+                # start_date=timezone.now().date() + timezone.timedelta(days=i*10),
+                # end_date=timezone.now().date() + timezone.timedelta(days=i*10 + 1),
                 excursion_date=timezone.now().date() + timezone.timedelta(days=i*10 + 5),
                 status='created',
                 teacher=random.choice([teacher1, teacher2])
@@ -259,20 +261,6 @@ class Command(BaseCommand):
             for idx, pupil in enumerate(selected_pupils):
                 Collection.objects.create(route=route, pupil=pupil, sequence_number=idx + 1)
         
-        # Create list of places
-        lists_of_places = []
-        for exc in excursions:
-            lop = ListOfPlaces.objects.create(name=f'List for {exc.name}', teacher=random.choice([teacher1, teacher2]), excursion=exc)
-            selected_places = random.sample(places, k=random.randint(2, 5))
-            for idx, place in enumerate(selected_places, start=1):
-                ObjectAddressProgress.objects.create(
-                    list_of_places=lop,
-                    place=place,
-                    visit_number=idx,
-                    duration_minutes=random.randint(15, 60)
-                )
-            lists_of_places.append(lop)
-        
         # Create playlists
         playlists = []
         for exc in excursions:
@@ -313,13 +301,57 @@ class Command(BaseCommand):
                     weight=random.randint(100, 1000)
                 )
         
-        # Create GoogleAddresses
-        for i in range(1, 6):
-            GoogleAddress.objects.create()
+        # # Create GoogleAddresses
+        # for i in range(1, 6):
+        #     GoogleAddress.objects.create()
         
-        # Create Addresses
-        for i in range(1, 6):
-            Address.objects.create()
+        # # Create Addresses
+        # for i in range(1, 6):
+        #     Address.objects.create()
+
+        # Initialize your API helper
+        api = RouteToAPI()
+
+        # Define real, land-connected addresses close to each other
+        addresses_to_add = [
+            "Aušros Vartų g. 9, Vilnius",
+            "Trakų pilis, Trakai",
+            "Universiteto g. 4, Vilnius",
+            "Gedimino pr. 3, Vilnius",
+            "Šv. Mykolo g. 9, Vilnius",
+            "Vilniaus g. 33, Vilnius",
+            "Subačiaus g., Vilnius, 11350 Vilniaus m. sav.",
+            "L. Sapiegos g. 13, Vilnius, 10312 Vilniaus m. sav.",
+            "Saulėtekio al. 9, Vilnius, 10222 Vilniaus m. sav.",
+        ]
+
+        # Create the places manually using the geocoding wrapper
+        created_places = []
+        for addr in addresses_to_add:
+            place = api.createPlaceFromAddress(addr)
+            if place:
+                created_places.append(place)
+
+        # Create list of places 
+        lists_of_places = []
+        for exc in excursions:
+            lop = ListOfPlaces.objects.create(
+                name=f'List for {exc.name}', 
+                teacher=random.choice([teacher1, teacher2]), 
+                excursion=exc
+            )
+
+            num_to_sample = min(len(created_places), random.randint(3, 5))
+            selected_places = random.sample(created_places, k=num_to_sample)
+            
+            for idx, place in enumerate(selected_places, start=1):
+                ObjectAddressProgress.objects.create(
+                    list_of_places=lop,
+                    visit_number=idx,
+                    place=place,
+                    duration_minutes=0
+                )
+            lists_of_places.append(lop)
         
         self.stdout.write(self.style.SUCCESS(f'Successfully created test data!'))
         self.stdout.write(f'Users: {User.objects.count()} (1 admin, 2 teachers, 10 pupils)')
@@ -327,6 +359,7 @@ class Command(BaseCommand):
         self.stdout.write(f'Places: {Place.objects.count()}')
         self.stdout.write(f'Songs: {Song.objects.count()}')
         self.stdout.write(f'Playlists: {Playlist.objects.count()}')
+        self.stdout.write(f'Places: {Place.objects.count()}')
         self.stdout.write('\nLogin credentials:')
         self.stdout.write('Admin: admin / admin123')
         self.stdout.write('Teacher: teacher1 / pass123')

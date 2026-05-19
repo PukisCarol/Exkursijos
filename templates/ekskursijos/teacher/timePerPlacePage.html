@@ -1,0 +1,83 @@
+{% extends 'ekskursijos/user/basePage.html' %}
+{% block title %}Nustatyti skiriamą laiką objektams{% endblock %}
+{% block content %}
+<h1 class="h1">Nustatyti skiriamą laiką objektams — {{ excursion.name }}</h1>
+{% if role == 'teacher' %}
+<div class="card">
+    <form method="post" action="{% url 'TimePerPlace' excursion.pk %}">
+        {% csrf_token %}
+
+        <div class="form-group mb-2">
+            <label><strong>Ekskursijos pradžios laikas:</strong></label>
+            <input type="datetime-local" name="start_time" id="startTimeInput" required class="form-control">
+        </div>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var startInput = document.getElementById('startTimeInput');
+            if (startInput) {
+                startInput.addEventListener('change', function() {
+                    this.blur();
+                });
+                startInput.addEventListener('focus', function() {
+                    this.showPicker();
+                });
+            }
+        });
+        </script>
+
+        <h3 class="mb-1">Vietos ir laikas</h3>
+        {% if places %}
+        <div class="table-wrapper mb-2">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Vieta</th>
+                        <th>Laikas</th>
+                        <th>Vienetai</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for progress in places %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ progress.place.name }}</td>
+                        <td>
+                            <input type="number"
+                                   name="place_times"
+                                   {% if progress.duration_minutes %}value="{{ progress.duration_minutes }}"{% endif %}
+                                   min="1"
+                                   step="1"
+                                   placeholder="Įveskite laiką"
+                                   required
+                                   style="width:90px;">
+                        </td>
+                        <td>
+                            <select name="place_time_units" style="width:80px;">
+                                <option value="minutes" {% if progress.duration_minutes < 60 %}selected{% endif %}>Minutės</option>
+                                <option value="hours" {% if progress.duration_minutes >= 60 %}selected{% endif %}>Valandos</option>
+                            </select>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="mb-2">Nėra vietų šiai ekskursijai.</p>
+        {% endif %}
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-green" {% if not places %}disabled{% endif %}>
+                Išsaugoti ir generuoti maršrutą
+            </button>
+            <a href="{% url 'ExcursionPage' excursion.pk %}" class="btn btn-gray">← Atšaukti</a>
+        </div>
+    </form>
+</div>
+{% else %}
+<p style="color:#c0392b; margin-top:1rem;">Neturite prieigos kurti ekskursijos maršrutą.</p>
+<a href="{% url 'excursionListPage' %}" class="btn btn-gray" style="margin-top:1rem;">← Grįžti</a>
+{% endif %}
+
+{% endblock %}

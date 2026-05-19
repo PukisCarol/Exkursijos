@@ -1,0 +1,68 @@
+{% extends 'ekskursijos/user/basePage.html' %}
+{% block title %}Sugeneruotas maršrutas{% endblock %}
+{% block content %}
+<h1 class="h1">Sugeneruotas maršrutas — {{ excursion.name }}</h1>
+
+<div class="card">
+    {% if places %}
+    <p class="mb-2"><strong>Bendra kelionės trukmė (su vizitais):</strong> {{ total_minutes }} min.</p>
+
+    {% if map_url %}
+    <div class="mb-2">
+        <img src="{{ map_url }}" alt="Maršruto žemėlapis" style="max-width:100%; border:1px solid #ddd; border-radius:4px;">
+    </div>
+    {% endif %}
+
+    {% if formatted_start %}
+    <div class="schedule-info mb-2" style="background:#e8f5e9; padding:0.75rem 1rem; border-radius:6px;">
+        <p style="margin:0 0 0.25rem 0;"><strong>Pradžios laikas:</strong> {{ formatted_start }}</p>
+        {% if formatted_end %}
+        <p style="margin:0;"><strong>Pabaigos laikas (numatoma):</strong> {{ formatted_end }}</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <h3 class="mb-1">Maršruto tvarka</h3>
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Eil. nr.</th>
+                    <th>Pavadinimas</th>
+                    <th>Platuma</th>
+                    <th>Ilguma</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for place in places %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ place.name }}</td>
+                    <td>{{ place.latitude|floatformat:5 }}</td>
+                    <td>{{ place.longitude|floatformat:5 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <form method="post" action="{% url 'SaveRoute' excursion.pk %}">
+        {% csrf_token %}
+        {% for place in places %}
+        <input type="hidden" name="place_order" value="{{ place.pk }}">
+        {% endfor %}
+        <div class="form-actions mt-2">
+            <button type="submit" class="btn btn-green">Išsaugoti maršrutą</button>
+            <a href="{% url 'RouteEditPage' excursion.pk %}" class="btn btn-blue">Redaguoti tvarką</a>
+            <a href="{% url 'ExcursionPage' excursion.pk %}" class="btn btn-gray">← Atšaukti</a>
+        </div>
+    </form>
+
+    {% else %}
+    <p class="mb-2">Nepavyko sugeneruoti maršruto — vietų sąrašas tuščias.</p>
+    <div class="form-actions mt-2">
+        <a href="{% url 'ExcursionPage' excursion.pk %}" class="btn btn-gray">← Grįžti</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends 'ekskursijos/user/basePage.html' %}
+{% block title %}Maršrutas — {{ excursion.name }}{% endblock %}
+{% block content %}
+<h1 class="h1">Ekskursijos maršrutas — {{ excursion.name }}</h1>
+
+<div class="mb-2">
+    <a href="{% url 'ExcursionPage' excursion.pk %}" class="btn btn-gray">← Grįžti į ekskursiją</a>
+    {% if role == 'teacher' and places %}
+    
+    <a href="{% url 'DeleteRoute' excursion.pk %}" class="btn btn-red">Ištrinti maršrutą</a>
+    {% endif %}
+</div>
+
+{% if places %}
+
+{% if map_url %}
+<div class="card mb-2">
+    <h3 class="mt-0 mb-1">Maršruto žemėlapis</h3>
+    <img src="{{ map_url }}" alt="Maršruto žemėlapis" style="max-width:100%; border:1px solid #ddd; border-radius:4px;">
+</div>
+{% endif %}
+
+<div class="card">
+    <h3 class="mt-0 mb-1">Vizitų tvarka</h3>
+
+    {% if total_minutes %}
+    <p class="mb-2"><strong>Bendra kelionės trukmė (su vizitais):</strong> {{ total_minutes }} min.</p>
+    {% endif %}
+
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Eil. nr.</th>
+                    <th>Pavadinimas</th>
+                    <th>Platuma</th>
+                    <th>Ilguma</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for place in places %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ place.name }}</td>
+                    <td>{{ place.latitude|floatformat:5 }}</td>
+                    <td>{{ place.longitude|floatformat:5 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% else %}
+<div class="card">
+    <p class="text-muted text-center">Maršrutas dar nesudarytas.</p>
+</div>
+{% endif %}
+
+{% if show_delete_dialog|default:False %}
+<div id="deleteConfirmDialog" style="
+    position:fixed; top:0; left:0; right:0; bottom:0;
+    background:rgba(0,0,0,0.5); z-index:9999;
+    display:flex; align-items:center; justify-content:center;">
+    <div style="
+        background:#fff; padding:2rem; border-radius:8px;
+        max-width:400px; width:90%; text-align:center;
+        box-shadow:0 4px 12px rgba(0,0,0,0.2);">
+        <h3 style="margin-top:0;">Ar tikrai norite ištrinti maršrutą?</h3>
+        <p style="color:#666;">Maršruto duomenys bus ištrinti. Vietos išliks išsaugotos.</p>
+        <div style="display:flex; gap:1rem; justify-content:center; margin-top:1.5rem;">
+            <form method="POST" action="{% url 'ConfirmDeletion' excursion.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Taip, ištrinti</button>
+            </form>
+            <a href="{% url 'CancelDeletion' excursion.pk %}" class="btn btn-gray">Atšaukti</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

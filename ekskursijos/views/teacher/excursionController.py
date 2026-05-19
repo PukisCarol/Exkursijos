@@ -7,3 +7,7 @@ class ExcursionController:
 
     def openCreateCollectionRoutePage(self, pk):
         return self.get(pk)
+
+    def planRoute(self, pk):
+        """Returns the excursion for the given pk so planRoute view can proceed (step 1)."""
+        return self.get(pk)

@@ -24,8 +24,8 @@ class Excursion(models.Model):
         ('published', 'Published'),
     ]
     name = models.CharField(max_length=200)
-    start_date = models.DateField()
-    end_date = models.DateField()
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
     excursion_date = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='created')
     teacher = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='excursions')
@@ -163,7 +163,7 @@ class ObjectAddressProgress(models.Model):
     list_of_places = models.ForeignKey(ListOfPlaces, on_delete=models.CASCADE, related_name='address_progresses')
     place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='address_progresses')
     visit_number = models.IntegerField()
-    duration_minutes = models.IntegerField()
+    duration_minutes = models.IntegerField(default=0)
     is_obligatory = models.BooleanField(default=False)
 
     class Meta:

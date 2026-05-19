@@ -12,9 +12,13 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(dotenv_path=BASE_DIR / '.env')
 
 # Security settings
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-s(vq+-rc)ol5c0@+g6*rqq*er#b(iy1l(pxqm#1#-6#ksbr5@#')

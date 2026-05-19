@@ -1,0 +1,52 @@
+{% extends 'ekskursijos/user/basePage.html' %}
+{% block title %}Patvirtinti vietų sąrašą{% endblock %}
+{% block content %}
+<h1 class="h1">Patvirtinti vietų sąrašą — {{ excursion.name }}</h1>
+
+{% if role == 'teacher' or not role %}
+<div class="card">
+    <p class="mb-2">Žemiau pateikiamos vietos, kurios bus įtrauktos į ekskursijos maršrutą.
+        Patikrinkite ir patvirtinkite sąrašą.</p>
+
+    {% if places %}
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Pavadinimas</th>
+                    <th>Platuma</th>
+                    <th>Ilguma</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for place in places %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ place.name }}</td>
+                    <td>{{ place.latitude|floatformat:5 }}</td>
+                    <td>{{ place.longitude|floatformat:5 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="mb-2">Vietų sąrašas tuščias. Prašome pirmiausia pridėti vietas.</p>
+    {% endif %}
+
+    <form method="post" action="{% url 'ConfirmPlaces' excursion.pk %}">
+        {% csrf_token %}
+        <div class="form-actions mt-2">
+            <button type="submit" class="btn btn-green" {% if not places %}disabled{% endif %}>
+                Patvirtinti ir tęsti
+            <!-- </button> -->
+            <!-- <a href="{% url 'ExcursionPage' excursion.pk %}" class="btn btn-gray">← Atšaukti</a> -->
+        </div>
+    </form>
+</div>
+{% else %}
+<p style="color:#c0392b; margin-top:1rem;">Neturite prieigos kurti ekskursijos maršrutą.</p>
+<a href="{% url 'excursionListPage' %}" class="btn btn-gray" style="margin-top:1rem;">← Grįžti</a>
+{% endif %}
+{% endblock %}

@@ -12,11 +12,14 @@ done
 
 echo "PostgreSQL is up."
 
-# Generate fresh migrations if none exist (fresh DB)
-if [ ! -d "ekskursijos/migrations" ] || [ -z "$(ls -A ekskursijos/migrations/*.py 2>/dev/null | grep -v __init__)" ]; then
-    echo "Generating initial migrations..."
-    $PYTHON manage.py makemigrations ekskursijos --noinput
-fi
+# # Generate fresh migrations if none exist (fresh DB)
+# if [ ! -d "ekskursijos/migrations" ] || [ -z "$(ls -A ekskursijos/migrations/*.py 2>/dev/null | grep -v __init__)" ]; then
+#     echo "Generating initial migrations..."
+#     $PYTHON manage.py makemigrations ekskursijos --noinput
+# fi
+
+echo "Generating initial migrations..."
+$PYTHON manage.py makemigrations ekskursijos --noinput
 
 echo "Running migrations..."
 $PYTHON manage.py migrate --noinput

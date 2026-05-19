@@ -1,0 +1,108 @@
+{% extends 'ekskursijos/user/basePage.html' %}
+{% block title %}Redaguoti maršrutą{% endblock %}
+{% block content %}
+<h1 class="h1">Redaguoti maršrutą — {{ excursion.name }}</h1>
+
+<div class="card">
+    <p class="mb-2">
+        Pakeiskite vietų eiliškumą įvesdami pageidaujamą numerį ir išsaugokite.
+    </p>
+
+    {% if places %}
+    <form method="post" action="{% url 'SaveRoute' excursion.pk %}" id="route-edit-form">
+        {% csrf_token %}
+
+        <div class="table-wrapper">
+            <table class="table" id="route-table">
+                <thead>
+                    <tr>
+                        <th>Eil. nr.</th>
+                        <th>Pavadinimas</th>
+                        <th>Platuma</th>
+                        <th>Ilguma</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for place in places %}
+                    <tr data-pk="{{ place.pk }}">
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ place.name }}</td>
+                        <td>{{ place.latitude|floatformat:5 }}</td>
+                        <td>{{ place.longitude|floatformat:5 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# Hidden inputs will be updated by JS before submit #}
+        <div id="hidden-order">
+            {% for place in places %}
+            <input type="hidden" name="place_order" value="{{ place.pk }}">
+            {% endfor %}
+        </div>
+
+        <div class="form-actions mt-2">
+            <button type="submit" class="btn btn-green">Išsaugoti maršrutą</button>
+            <a href="{% url 'GenerateRoute' excursion.pk %}" class="btn btn-gray">← Grįžti</a>
+        </div>
+    </form>
+
+    <script>
+        // Simple drag-and-drop reorder using the HTML5 Drag API
+        (function () {
+            const tbody = document.querySelector('#route-table tbody');
+            let dragged = null;
+
+            tbody.addEventListener('dragstart', function (e) {
+                dragged = e.target.closest('tr');
+                dragged.style.opacity = '0.5';
+            });
+
+            tbody.addEventListener('dragend', function (e) {
+                if (dragged) dragged.style.opacity = '';
+                dragged = null;
+                updateHiddenInputs();
+            });
+
+            tbody.addEventListener('dragover', function (e) {
+                e.preventDefault();
+                const target = e.target.closest('tr');
+                if (target && target !== dragged) {
+                    const rect = target.getBoundingClientRect();
+                    const next = (e.clientY - rect.top) > rect.height / 2
+                        ? target.nextSibling : target;
+                    tbody.insertBefore(dragged, next);
+                }
+            });
+
+            // Make rows draggable
+            tbody.querySelectorAll('tr').forEach(function (row) {
+                row.setAttribute('draggable', 'true');
+                row.style.cursor = 'grab';
+            });
+
+            function updateHiddenInputs() {
+                const container = document.getElementById('hidden-order');
+                container.innerHTML = '';
+                tbody.querySelectorAll('tr[data-pk]').forEach(function (row, idx) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'place_order';
+                    input.value = row.dataset.pk;
+                    container.appendChild(input);
+                    // update displayed index
+                    row.cells[0].textContent = idx + 1;
+                });
+            }
+        })();
+    </script>
+
+    {% else %}
+    <p class="mb-2">Maršrutas dar nesugeneruotas arba vietų sąrašas tuščias.</p>
+    <div class="form-actions mt-2">
+        <a href="{% url 'ExcursionPage' excursion.pk %}" class="btn btn-gray">← Grįžti</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

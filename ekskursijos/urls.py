@@ -43,6 +43,18 @@ from .views.teacher.objectController import (
     saveCriteria,
     saveObligatory,
 )
+from .views.user.routeController import (
+    planRoute,
+    confirmPlaces,
+    openTimePerPlacePage,
+    generateRoute,
+    openRouteEditPage,
+    saveRoute,
+    getRoute,
+    deleteRouteView,
+    confirmDeletion,
+    cancelDeletion,
+)
 
 urlpatterns = [
     path('', mainPage, name='mainPage'),
@@ -81,4 +93,17 @@ urlpatterns = [
     path('NewObjectPage/<int:pk>/submitAddress/', submitAddress, name='submitAddress'),
     path('NewObjectPage/<int:pk>/saveCriteria/', saveCriteria, name='saveCriteria'),
     path('NewObjectPage/<int:pk>/saveObligatory/', saveObligatory, name='saveObligatory'),
+    # Route planning flow (Diagram 1)
+    path('PlanRoute/<int:pk>/', planRoute, name='PlanRoute'),
+    path('ConfirmPlaces/<int:pk>/', confirmPlaces, name='ConfirmPlaces'),
+    path('TimePerPlace/<int:pk>/', openTimePerPlacePage, name='TimePerPlace'),
+    path('GenerateRoute/<int:pk>/', generateRoute, name='GenerateRoute'),
+    path('RouteEditPage/<int:pk>/', openRouteEditPage, name='RouteEditPage'),
+    path('SaveRoute/<int:pk>/', saveRoute, name='SaveRoute'),
+    # Route view flow (Diagram 2)
+    path('RoutePage/<int:pk>/', getRoute, name='RoutePage'),
+    # Delete route flow
+    path('RoutePage/<int:pk>/delete/', deleteRouteView, name='DeleteRoute'),
+    path('RoutePage/<int:pk>/delete/confirm/', confirmDeletion, name='ConfirmDeletion'),
+    path('RoutePage/<int:pk>/delete/cancel/', cancelDeletion, name='CancelDeletion'),
 ]
