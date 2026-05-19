@@ -212,6 +212,15 @@ class RouteController:
         excursion.status = 'route_ready'
         excursion.save()
 
+    def saveStartTime(self, excursion, start_date, end_date):
+        """
+        Persists the user-provided start date and the calculated end date
+        (both as yyyy-mm-dd date objects) into excursion.start_date / end_date.
+        """
+        excursion.start_date = start_date
+        excursion.end_date = end_date
+        excursion.save()
+
     def sendSuccessMessage(self, request):
         """Adds a Django success message (step 36)."""
         messages.success(request, 'Maršrutas sėkmingai išsaugotas.')
@@ -543,11 +552,26 @@ def saveRoute(request, pk):
         # Step 34-35: save()
         controller.save(excursion, ordered_places)
 
+        # Save start_date and end_date (yyyy-mm-dd) from session start time + route duration
+        start_time_str = request.session.get(f'route_start_time_{pk}')
+        if start_time_str:
+            try:
+                from datetime import timedelta
+                start_dt = datetime.strptime(start_time_str, '%Y-%m-%dT%H:%M')
+                distances = controller.getDistanceAndTime(excursion, ordered_places)
+                route_indices = list(range(len(ordered_places)))
+                total_minutes = controller.calculateTime(route_indices, distances, ordered_places)
+                end_dt = start_dt + timedelta(minutes=total_minutes)
+                controller.saveStartTime(excursion, start_dt.date(), end_dt.date())
+            except (ValueError, TypeError):
+                pass
+
         # Step 36: sendSuccessMessage()
         controller.sendSuccessMessage(request)
 
         # Clear session
         request.session.pop(f'generated_route_{pk}', None)
+        request.session.pop(f'route_start_time_{pk}', None)
 
         # Step 37: redirect back to ExcursionPage (success message shown there)
         return redirect('ExcursionPage', pk=pk)
