@@ -214,8 +214,7 @@ def createNewLists(request, pk):
         if created:
             linked_items += 1
 
-    # Link T-Shirt and Pants to the excursion
-    for clothing_name in ['T-Shirt', 'Pants']:
+    for clothing_name in ['Marškinėliai', 'Kelnės']:
         clothing = Clothing.objects.filter(name__iexact=clothing_name).first()
         if clothing and not excursion.clothing_items.filter(pk=clothing.pk).exists():
             excursion.clothing_items.add(clothing)
