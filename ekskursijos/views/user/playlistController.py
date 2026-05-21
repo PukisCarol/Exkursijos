@@ -43,9 +43,9 @@ class PlaylistController:
         self.Tmin = 0.1
         self.cooling_rate = 0.995
         self.max_iter = 1000
-        self.iterations_at_min_temp = 50
+        self.iterationsAtMinTemp = 50
         self.iteration = 0
-        self.transition_cost = []
+        self.transitionCost = []
         self.price_dict = {}
         self.current_solution = []
         self.current_cost = 0.0
@@ -176,16 +176,16 @@ class PlaylistController:
     # 32
     def findSmallestPriceForEachSongCombination(self):
         n = self.N
-        self.transition_cost = [[0] * n for _ in range(n)]
+        self.transitionCost = [[0] * n for _ in range(n)]
         for i in range(n):
             genre_i = self.songs[i]['genre'].id
             for j in range(n):
                 if i == j:
-                    self.transition_cost[i][j] = 0.0
+                    self.transitionCost[i][j] = 0.0
                 else:
                     genre_j = self.songs[j]['genre'].id
                     price = self.price_dict.get((genre_i, genre_j), 1000.0)
-                    self.transition_cost[i][j] = price
+                    self.transitionCost[i][j] = price
 
     # 33
     def findStartingPrice(self, solution):
@@ -197,7 +197,7 @@ class PlaylistController:
         self.Tmin = 0.1
         self.cooling_rate = 0.995
         self.max_iter = max(1000, self.N * 100)
-        self.iterations_at_min_temp = 50
+        self.iterationsAtMinTemp = 50
 
     # 35
     def setCurrentSolution(self, solution, cost):
@@ -218,7 +218,7 @@ class PlaylistController:
         for i in range(n - 1):
             a = solution[i]
             b = solution[i + 1]
-            total += self.transition_cost[a][b]
+            total += self.transitionCost[a][b]
         for pos, idx in enumerate(solution):
             if pos < len(self.place_genres):
                 song_genre = self.songs[idx]['genre']
@@ -623,15 +623,14 @@ def generatePlaylist(request, pk):
                 else:
                     if controller.decideWhetherToTakeSolution(delta):
                         controller.setCurrentSolution(neighbor, cost)
-                if controller.iteration > 0 and controller.iteration % controller.iterations_at_min_temp == 0:
+                if controller.iteration > 0 and controller.iteration % controller.iterationsAtMinTemp == 0:
                     controller.decreaseTemperature()
                 controller.incrementCurrentIterations()
 
-        with transaction.atomic():
-            controller.deleteCurrentItems()
-            controller.bulkCreateSongsAndItems()
-            controller.recountItemStartTimes()
-            controller.updateCreationDate()
+        controller.deleteCurrentItems()
+        controller.bulkCreateSongsAndItems()
+        controller.recountItemStartTimes()
+        controller.updateCreationDate()
     except Exception as e:
         logger.error("PlaylistController.generate() FAILED:\n%s", traceback.format_exc())
         messages.error(request, f'Error: {str(e)}')
